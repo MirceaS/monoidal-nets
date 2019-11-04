@@ -103,6 +103,10 @@ record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : S
       ηₒv=ηᵢv : ηₒv E.≈ ηᵢv
       ηₒv=ηᵢv = E.Eq.trans ηₒv=O O=ηᵢv
 
+comp : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅
+comp A B = ?
+
+{-
 record HypergraphMorphism (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅' : Level) (A : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) (B : Hypergraph ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅') : Set (ℓₑ ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅ ⊔ ℓₑ' ⊔ ℓ₁' ⊔ ℓ₂' ⊔ ℓᵥ' ⊔ ℓ₃' ⊔ ℓ₄' ⊔ ℓ₅') where
   module A = Hypergraph A
   module B = Hypergraph B
@@ -112,8 +116,21 @@ record HypergraphMorphism (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ ℓ�
     V-hom : A.V → B.V
     E-hom : A.E → B.E
   
-  -- map_totally_ordered_subsets : ∀ {b1 b2 a1 a2} → B-tos.totally_ordered_subsets {b1} {b2} → A-tos.totally_ordered_subsets {a1} {a2}
-  -- map_totally_ordered_subsets (pred , rel , total) = (pred ∘ V-hom , rel on (map V-hom id) , ?)
+  map_totally_ordered_subsets : ∀ {l1 l2} → B-tos.totally_ordered_subsets {l1} {l2} → A-tos.totally_ordered_subsets {l1} {l2}
+  map_totally_ordered_subsets (pred , rel , totalOrd) = (pred ∘ V-hom , (rel on V-hom-pair) , record
+    { isPartialOrder = record
+      { isPreorder = {!!}
+      ; antisym = λ {x} {y} → antisym {map V-hom id x} {map V-hom id y}
+      }
+    ; total = λ x y → total (V-hom-pair x) (V-hom-pair y)
+    })
+    where
+      V-hom-pair : Σ A.V (pred ∘ V-hom) → Σ B.V pred
+      V-hom-pair = map V-hom id
+      open IsTotalOrder totalOrd
+      -- antisym' : ∀ {i j} → rel (V-hom-pair i) (V-hom-pair j) → rel (V-hom-pair j) (V-hom-pair i) → _
+      
 
   -- field
   --   s-coherence : ∀ {e} → (B.s E-hom e) () 
+-}
