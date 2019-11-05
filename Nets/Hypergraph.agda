@@ -2,6 +2,7 @@ open import Level
 open import Agda.Builtin.Sigma
 open import Agda.Builtin.Equality
 open import Data.Product using (_×_ ; map)
+open import Data.Sum using (_⊎_ ; inj₁ ; inj₂)
 open import Data.Fin using (Fin)
 open import Data.Fin.Properties renaming (setoid to Fin-setoid)
 open import Data.Nat using (ℕ)
@@ -11,10 +12,12 @@ open import Relation.Binary
 
 open import Nets.Utils
 
-module Nets.Hypergraph where
+module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ) where
 
+module T = Setoid Types-setoid
+T = T.Carrier
 
-record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : Set (suc (ℓₑ ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅)) where
+record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : Set (suc (ℓₑ ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅ ⊔ ℓₜ ⊔ ℓₜᵣ)) where
   field
     E-poset : Poset ℓₑ ℓ₁ ℓ₂
     V-setoid : Setoid ℓᵥ ℓ₃
@@ -26,6 +29,7 @@ record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : S
   V = V.Carrier
 
   field
+    {-
     V-size : ℕ
     E-size : ℕ
     V-fin : V → Fin V-size
@@ -34,6 +38,9 @@ record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : S
     E-fin-bij : IsBijection E._≈_ _≡_ E-fin
     V-fin-resp : V._≈_ =[ V-fin ]⇒ _≡_
     E-fin-resp : E._≈_ =[ E-fin ]⇒ _≡_
+    -}
+
+    type : V → T
 
     s : E → totally_ordered_subsets {ℓ₄} {ℓ₅}
     t : E → totally_ordered_subsets {ℓ₄} {ℓ₅}
@@ -61,6 +68,9 @@ record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : S
 
   _∉_ : (v : V) → totally_ordered_subsets {ℓ₄} {ℓ₅} → Set _
   v ∉ s = (v ∈ s) → ⊥
+
+  E-setoid : Setoid ℓₑ ℓ₁
+  E-setoid = record { Carrier = E ; _≈_ = E._≈_ ; isEquivalence = E.isEquivalence }
 
   lemma1ᵢ : ∀ v → v ∉ s I
   lemma1ᵢ v p = γ-≉ v ηₒv=ηᵢv
@@ -103,8 +113,48 @@ record Hypergraph (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level) : S
       ηₒv=ηᵢv : ηₒv E.≈ ηᵢv
       ηₒv=ηᵢv = E.Eq.trans ηₒv=O O=ηᵢv
 
-comp : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅
-comp A B = ?
+bij-type : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → Set (ℓₜᵣ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄)
+bij-type A B = Σ (Bij (subset-setoid A.V-setoid (fst (A.t A.O))) (subset-setoid B.V-setoid (fst (B.s B.I)))) (λ bij → (∀ x → (A.type (fst x)) T.≈ (B.type (fst (Bij.from bij x)))))
+  where
+    module A = Hypergraph A
+    module B = Hypergraph B
+
+comp : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → bij-type A B → Hypergraph _ _ _ _ _ _ _
+comp A B (bij , types-match) = record
+                                 { E-poset = record { Carrier = (A.E-setoid − A.O) ⊎ (B.E-setoid − B.I) ; _≈_ = _E-≈_ ; _≤_ = _E-≤_ ; isPartialOrder = {!!} }
+                                 ; V-setoid = {!!}
+                                 ; type = {!!}
+                                 ; s = {!!}
+                                 ; t = {!!}
+                                 ; s-resp = {!!}
+                                 ; t-resp = {!!}
+                                 ; I = {!!}
+                                 ; O = {!!}
+                                 ; I-min = {!!}
+                                 ; O-max = {!!}
+                                 ; ηᵢ = {!!}
+                                 ; ηᵢ-uniq = {!!}
+                                 ; ηᵢ-resp = {!!}
+                                 ; ηₒ = {!!}
+                                 ; ηₒ-uniq = {!!}
+                                 ; ηₒ-resp = {!!}
+                                 ; γ = {!!}
+                                 ; γ-≉ = {!!}
+                                 }
+                                 where
+                                 module A = Hypergraph A
+                                 module B = Hypergraph B
+                                 _E-≈_ : Rel ((A.E-setoid − A.O) ⊎ (B.E-setoid − B.I)) _
+                                 (inj₁ (x , _)) E-≈ (inj₁ (y , _)) = x A.E.≈ y
+                                 (inj₂ (x , _)) E-≈ (inj₂ (y , _)) = x B.E.≈ y
+                                 (inj₁ (x , _)) E-≈ (inj₂ (y , _)) = ⊥'
+                                 (inj₂ (x , _)) E-≈ (inj₁ (y , _)) = ⊥'
+                                 _E-≤_ : Rel ((A.E-setoid − A.O) ⊎ (B.E-setoid − B.I)) _
+                                 (inj₁ (x , _)) E-≤ (inj₁ (y , _)) = x A.E.≤ y
+                                 (inj₂ (x , _)) E-≤ (inj₂ (y , _)) = x B.E.≤ y
+                                 (inj₁ (x , _)) E-≤ (inj₂ (y , _)) = ⊤'
+                                 (inj₂ (x , _)) E-≤ (inj₁ (y , _)) = ⊥'
+                                 
 
 {-
 record HypergraphMorphism (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅' : Level) (A : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) (B : Hypergraph ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅') : Set (ℓₑ ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅ ⊔ ℓₑ' ⊔ ℓ₁' ⊔ ℓ₂' ⊔ ℓᵥ' ⊔ ℓ₃' ⊔ ℓ₄' ⊔ ℓ₅') where
