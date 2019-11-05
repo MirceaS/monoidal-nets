@@ -121,7 +121,7 @@ bij-type A B = Σ (Bij (subset-setoid A.V-setoid (fst (A.t A.O))) (subset-setoid
 
 comp : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → bij-type A B → Hypergraph _ _ _ _ _ _ _
 comp A B (bij , types-match) = record
-                                 { E-poset = record { Carrier = (A.E-setoid − A.O) ⊎ (B.E-setoid − B.I) ; _≈_ = _E-≈_ ; _≤_ = _E-≤_ ; isPartialOrder = {!!} }
+                                 { E-poset = record { Carrier = (A.E-setoid − A.O) ⊎ (B.E-setoid − B.I) ; _≈_ = _E-≈_ ; _≤_ = _E-≤_ ; isPartialOrder = record { isPreorder = record { isEquivalence = {!!} ; reflexive = reflexive ; trans = trans } ; antisym = antisym } }
                                  ; V-setoid = {!!}
                                  ; type = {!!}
                                  ; s = {!!}
@@ -154,6 +154,28 @@ comp A B (bij , types-match) = record
                                  (inj₂ (x , _)) E-≤ (inj₂ (y , _)) = x B.E.≤ y
                                  (inj₁ (x , _)) E-≤ (inj₂ (y , _)) = ⊤'
                                  (inj₂ (x , _)) E-≤ (inj₁ (y , _)) = ⊥'
+                                 antisym : Antisymmetric _E-≈_ _E-≤_
+                                 antisym {inj₁ _} {inj₁ _} = A.E.antisym
+                                 antisym {inj₂ _} {inj₂ _} = B.E.antisym
+                                 antisym {inj₁ _} {inj₂ _} _ ()
+                                 antisym {inj₂ _} {inj₁ _} ()
+                                 reflexive : _E-≈_ ⇒ _E-≤_
+                                 reflexive {inj₁ _} {inj₁ _} = A.E.reflexive
+                                 reflexive {inj₂ _} {inj₂ _} = B.E.reflexive
+                                 reflexive {inj₁ _} {inj₂ _} ()
+                                 reflexive {inj₂ _} {inj₁ _} ()
+                                 trans : Transitive _E-≤_
+                                 trans {inj₁ _} {inj₁ _} {inj₁ _} = A.E.trans
+                                 trans {inj₂ _} {inj₂ _} {inj₂ _} = B.E.trans
+                                 trans {inj₁ _} {_} {inj₂ _} _ _ = tt
+                                 trans {_} {inj₂ _} {inj₁ _} _ ()
+                                 trans {inj₂ _} {inj₁ _} ()
+                                 
+                                 
+                                 
+                                 
+                                 
+                                 
                                  
 
 {-
