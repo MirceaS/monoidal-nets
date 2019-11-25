@@ -2,11 +2,13 @@ open import Level
 open import Agda.Builtin.Sigma
 open import Relation.Binary
 open import Relation.Unary using (Pred ; _⊆_)
+open import Relation.Nullary
 open import Function.Core using (_on_)
-open import Data.Maybe
+open import Data.Maybe hiding (map)
 open import Data.List
-open import Data.Nat hiding (_⊔_)
-open import Data.Product using (_×_ ; map₂)
+open import Data.Nat hiding (_⊔_ ; _≟_)
+open import Data.Sum using (_⊎_)
+open import Data.Product using (_×_ ; map₁ ; map₂)
 open import Data.Empty
 
 module Nets.Utils where
@@ -20,10 +22,55 @@ _P≈_ : {a ℓ₁ ℓ₂ : Level} {A : Set a} → Pred A ℓ₁ → Pred A ℓ�
 P P≈ Q = P ⊆ Q × Q ⊆ P
 
 _−_ : {a l : Level} → (A : Setoid a l) → (x : Setoid.Carrier A) → Set _
-A − x = Σ A.Carrier (x ≉_)
+A − x = Σ A.Carrier (x A.≉_)
   where
     module A = Setoid A
-    _≉_ = λ x y → (x A.≈ y) → ⊥
+
+
+module ListOfUniques {a ℓ : Level} (A : Setoid a ℓ) where
+  open Setoid A
+
+  same-list : Rel (List Carrier) ℓ
+  same-list [] [] = ⊤'
+  same-list (x ∷ xs) (y ∷ ys) = (x ≈ y) × (same-list xs ys)
+  same-list (x ∷ xs) [] = ⊥'
+  same-list [] (y ∷ ys) = ⊥'
+
+  _∈_ : Carrier → List Carrier → Set ℓ
+  x ∈ xs = foldr _⊎_ ⊥' (map (x ≈_) xs)
+
+  _∉_ : Carrier → List Carrier → Set ℓ
+  x ∉ xs = ¬ (x ∈ xs)
+
+  {- dec-same-list : Decidable same-list
+  dec-same-list [] [] = yes tt
+    where open Relation.Nullary
+  dec-same-list (x ∷ xs) [] = no (λ {()})
+    where open Relation.Nullary
+  dec-same-list [] (y ∷ ys) = no (λ {()})
+    where open Relation.Nullary
+  dec-same-list (x ∷ xs) (y ∷ ys) = (λ {yes x=y → (λ {yes xs=ys → yes (x=y , xs=ys) ; no xs≠ys → no (map₂ xs≠ys)}) (dec-same-list xs ys) ; no x≠y → no (map₁ x≠y) }) (x ≟ y)
+    where open Relation.Nullary
+  {- dec-same-list (x ∷ xs) (y ∷ ys) | (yes x=y) with (dec-same-list xs ys)
+  dec-same-list (x ∷ xs) (y ∷ ys)    | (yes x=y)    | (yes xs=ys) = yes (x=y , xs=ys)
+  dec-same-list (x ∷ xs) (y ∷ ys)    | (yes x=y)    | (no  xs≠ys) = no  (map₂ xs≠ys)
+  dec-same-list (x ∷ xs) (y ∷ ys)    | (no x≠y) = no (map₁ x≠y)
+    where open Relation.Nullary -} -}
+
+  -- data contains_only_uniques' : (xs : List Carrier) → Set ℓ where
+  --   empty : contains_only_uniques' []
+  --   head_unique : (x : Carrier) → (xs : List Carrier) → (foldr _×_ ⊤' (map (x ≉_) xs)) → contains_only_uniques' xs → contains_only_uniques' (x ∷ xs)
+
+  contains-only-uniques : List Carrier → Set ℓ
+  contains-only-uniques [] = ⊤'
+  contains-only-uniques (x ∷ xs) = (foldr _×_ ⊤' (map (x ≉_) xs)) × (contains-only-uniques xs)
+
+  list-of-uniques : Set _
+  list-of-uniques = Σ _ contains-only-uniques
+
+  _≋_ : Rel list-of-uniques ℓ
+  (l , _) ≋ (r , _) = same-list l r
+
 
 subset-setoid : {ℓ₁ ℓ₂ ℓ₃ : Level} → (A-setoid : Setoid ℓ₁ ℓ₂) → Pred (Setoid.Carrier A-setoid) ℓ₃ → Setoid (ℓ₁ ⊔ ℓ₃) ℓ₂
 subset-setoid A-setoid pred = record
