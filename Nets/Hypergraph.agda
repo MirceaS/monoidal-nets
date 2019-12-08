@@ -47,8 +47,7 @@ record Hypergraph {ℓₑ ℓ₁ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level} : Set (suc
   field
     ηₛ :      (v : V) →          ∃ (λ e → v ∈ (s e))
     ηₜ :      (v : V) →          ∃ (λ e → v ∈ (t e))
-
-  field              -- Properties
+    -- Properties
     ηₛ-uniq : (v : V) → (e-con : ∃ (λ e → v ∈ (s e))) → (wtns e-con) ≈ (wtns (ηₛ v))
     ηₜ-uniq : (v : V) → (e-con : ∃ (λ e → v ∈ (t e))) → (wtns (ηₜ v) ≈ (wtns e-con))
     ηₛ-resp : V._≈_ =[ wtns ∘ ηₛ ]⇒ _≈_
