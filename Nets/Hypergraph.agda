@@ -1,202 +1,153 @@
-open import Level
-open import Agda.Builtin.Sigma
+open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
-open import Data.Product using (_×_ ; ∃)
-open import Data.Sum using (_⊎_ ; inj₁ ; inj₂)
-open import Data.Fin using (Fin)
-open import Data.Fin.Properties renaming (setoid to Fin-setoid)
-open import Data.Nat using (ℕ)
-open import Data.Empty
-open import Data.List
-open import Function using (_∘_ ; IsBijection ; _on_ ; id)
+open import Data.Product using (Σ ; _,_ ; ∃₂ ; proj₁ ; proj₂)
+open import Data.Nat hiding (_⊔_)
+open import Data.Vec
+open import Data.Fin renaming (zero to fzero ; suc to fsuc)
 open import Relation.Binary
-
-open import Nets.Utils
+open import Relation.Binary.PropositionalEquality using (_≢_)
+open import Function using (_∘_ ; Inverseᵇ)
 
 module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ) where
-open ListOfUniques Types-setoid using () renaming (same-list to _T≈_) public
 
 module T = Setoid Types-setoid
 T = T.Carrier
 
-record Hypergraph {ℓₑ ℓ₁ ℓᵥ ℓ₃ ℓ₄ ℓ₅ : Level} : Set (suc (ℓₑ ⊔ ℓ₁ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅ ⊔ ℓₜ ⊔ ℓₜᵣ)) where
+------some technical utilities------
+data ⊤ {l : Level} : Set l where
+  tt : ⊤
+
+Fin-pm : {ℓ₁ : Level} {n : ℕ} → Fin (suc n) → (A : Set ℓ₁) → (B : Fin n → Set ℓ₁) → Set ℓ₁
+Fin-pm fzero A _ = A
+Fin-pm (fsuc i) _ B = B i
+------------------------------------
+
+record Hypergraph {ℓₒ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓₒ)) where
+  inductive
   field
-    E-setoid : Setoid ℓₑ ℓ₁
-    V-setoid : Setoid ℓᵥ ℓ₃
-
-  open ListOfUniques V-setoid public
-  
-  open Setoid E-setoid public
-  E = Carrier
-  module V = Setoid V-setoid
-  V = V.Carrier
-
-  field
-    type : V → T
-    
-    I : E
-    O : E
-
-    s+uniq : E → list-of-uniques
-    t+uniq : E → list-of-uniques
-
-  s = fst ∘ s+uniq
-  t = fst ∘ t+uniq
-  wtns = fst         -- The witness of an existential statement (defined for clarity)
-  
-  field
-    ηₛ :      (v : V) →          ∃ (λ e → v ∈ (s e))
-    ηₜ :      (v : V) →          ∃ (λ e → v ∈ (t e))
-    -- Properties
-    ηₛ-uniq : (v : V) → (e-con : ∃ (λ e → v ∈ (s e))) → (wtns e-con) ≈ (wtns (ηₛ v))
-    ηₜ-uniq : (v : V) → (e-con : ∃ (λ e → v ∈ (t e))) → (wtns (ηₜ v) ≈ (wtns e-con))
-    ηₛ-resp : V._≈_ =[ wtns ∘ ηₛ ]⇒ _≈_
-    ηₜ-resp : V._≈_ =[ wtns ∘ ηₜ ]⇒ _≈_
-    s-resp : _≈_ =[ s+uniq ]⇒ _≋_
-    t-resp : _≈_ =[ t+uniq ]⇒ _≋_
-
-
-record IsDirectedHypergraph (hg : Hypergraph) (IT : List T) (OT : List T) : Set _ where
-  open Hypergraph hg hiding (reflexive) public
-  field
-    input-match :   IT T≈ (map type (t I))
-    output-match :  (map type (s O)) T≈ OT
-
-    partial-order : Σ (Rel E _) (IsPartialOrder _≈_)
-
-  _≤_ = fst partial-order
-  open IsPartialOrder (snd partial-order) hiding (refl) public
-
-  field
-    I-min : Minimum _≤_ I
-    O-max : Maximum _≤_ O
-    
-    γ :   (v : V) → wtns (ηₜ v) ≤ wtns (ηₛ v)
-    γ-≉ : (v : V) → wtns (ηₜ v) ≉ wtns (ηₛ v)
-
-  lemma1ᵢ : ∀ v → v ∉ s I
-  lemma1ᵢ v p = γ-≉ v ηₜv=ηₛv
-    where
-      ηₜv : E
-      ηₜv = wtns (ηₜ v)
-      ηₛv : E
-      ηₛv = wtns (ηₛ v)
-      ηₜv≤ηₛv : ηₜv ≤ ηₛv
-      ηₜv≤ηₛv = γ v
-      I=ηₛv : I ≈ ηₛv
-      I=ηₛv = ηₛ-uniq v (I , p)
-      ηₜv≤I : ηₜv ≤ I
-      ηₜv≤I = ≤-respʳ-≈ (Eq.sym I=ηₛv) ηₜv≤ηₛv
-      I≤ηₜv : I ≤ ηₜv
-      I≤ηₜv = I-min ηₜv
-      ηₜv=I : ηₜv ≈ I
-      ηₜv=I = antisym ηₜv≤I I≤ηₜv
-      ηₜv=ηₛv : ηₜv ≈ ηₛv
-      ηₜv=ηₛv = Eq.trans ηₜv=I I=ηₛv
-    
-  
-  lemma1ₒ : ∀ v → v ∉ t O
-  lemma1ₒ v p = γ-≉ v ηₜv=ηₛv
-    where
-      ηₜv : E
-      ηₜv = wtns (ηₜ v)
-      ηₛv : E
-      ηₛv = wtns (ηₛ v)
-      ηₜv≤ηₛv : ηₜv ≤ ηₛv
-      ηₜv≤ηₛv = γ v
-      ηₜv=O : ηₜv ≈ O
-      ηₜv=O = ηₜ-uniq v (O , p)
-      O≤ηₛv : O ≤ ηₛv
-      O≤ηₛv = ≤-respˡ-≈ ηₜv=O ηₜv≤ηₛv
-      ηₛv≤O : ηₛv ≤ O
-      ηₛv≤O = O-max ηₛv
-      O=ηₛv : O ≈ ηₛv
-      O=ηₛv = antisym O≤ηₛv ηₛv≤O
-      ηₜv=ηₛv : ηₜv ≈ ηₛv
-      ηₜv=ηₛv = Eq.trans ηₜv=O O=ηₛv
-
-
-DirectedHypergraph = Σ Hypergraph IsDirectedHypergraph
-
-    {-   --finiteness
-    V-size : ℕ
+    Obj : Σ _ (Vec T) → Σ _ (Vec T) → Set ℓₒ
     E-size : ℕ
-    V-fin : V → Fin V-size
-    E-fin : E → Fin E-size
-    V-fin-bij : IsBijection V._≈_ _≡_ V-fin
-    E-fin-bij : IsBijection E._≈_ _≡_ E-fin
-    V-fin-resp : V._≈_ =[ V-fin ]⇒ _≡_
-    E-fin-resp : E._≈_ =[ E-fin ]⇒ _≡_
-    -}
+    E : Vec (∃₂ Obj) E-size
 
+  Vec-of-Vecs : Set ℓₜ
+  Vec-of-Vecs = Vec (Σ _ (Vec T)) (suc E-size)
 
-{-
-bij-type : ∀ {ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅} → (A B : DirectedHypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) → Set (ℓₜᵣ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄)
-bij-type A B = Σ (Bij (subset-setoid A.V-setoid (fst (A.t A.O))) (subset-setoid B.V-setoid (fst (B.s B.I)))) (λ bij → (∀ x → (A.type (fst x)) T.≈ (B.type (fst (Bij.from bij x)))))
-  where
-    module A = DirectedHypergraph A
-    module B = DirectedHypergraph B -}
-
--- (A.E-setoid − A.O) ⊎ (B.E-setoid − B.I)
-comp : {X Y Z : List T} → DirectedHypergraph Y Z → DirectedHypergraph X Y → DirectedHypergraph X Z
-comp A B (bij , types-match) = ?
-                                 where
-                                 module A = IsDirectedHypergraph (snd A)
-                                 module B = IsDirectedHypergraph (snd B)
-                                 _E-≈_ : Rel ((A.E-setoid − A.O) ⊎ (B.E-setoid − B.I)) _
-                                 (inj₁ (x , _)) E-≈ (inj₁ (y , _)) = x A.≈ y
-                                 (inj₂ (x , _)) E-≈ (inj₂ (y , _)) = x B.≈ y
-                                 (inj₁ (x , _)) E-≈ (inj₂ (y , _)) = ⊥'
-                                 (inj₂ (x , _)) E-≈ (inj₁ (y , _)) = ⊥'
-                                 _E-≤_ : Rel ((A.E-setoid − A.O) ⊎ (B.E-setoid − B.I)) _
-                                 (inj₁ (x , _)) E-≤ (inj₁ (y , _)) = x A.≤ y
-                                 (inj₂ (x , _)) E-≤ (inj₂ (y , _)) = x B.≤ y
-                                 (inj₁ (x , _)) E-≤ (inj₂ (y , _)) = ⊤'
-                                 (inj₂ (x , _)) E-≤ (inj₁ (y , _)) = ⊥'
-                                 antisym : Antisymmetric _E-≈_ _E-≤_
-                                 antisym {inj₁ _} {inj₁ _} = A.antisym
-                                 antisym {inj₂ _} {inj₂ _} = B.antisym
-                                 antisym {inj₁ _} {inj₂ _} _ ()
-                                 antisym {inj₂ _} {inj₁ _} ()
-                                 reflexive : _E-≈_ ⇒ _E-≤_
-                                 reflexive {inj₁ _} {inj₁ _} = A.reflexive
-                                 reflexive {inj₂ _} {inj₂ _} = B.reflexive
-                                 reflexive {inj₁ _} {inj₂ _} ()
-                                 reflexive {inj₂ _} {inj₁ _} ()
-                                 trans : Transitive _E-≤_
-                                 trans {inj₁ _} {inj₁ _} {inj₁ _} = A.trans
-                                 trans {inj₂ _} {inj₂ _} {inj₂ _} = B.trans
-                                 trans {inj₁ _} {_} {inj₂ _} _ _ = tt
-                                 trans {_} {inj₂ _} {inj₁ _} _ ()
-                                 trans {inj₂ _} {inj₁ _} ()                     
-
-
-
-{-
-record HypergraphMorphism (ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅ ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅' : Level) (A : Hypergraph ℓₑ ℓ₁ ℓ₂ ℓᵥ ℓ₃ ℓ₄ ℓ₅) (B : Hypergraph ℓₑ' ℓ₁' ℓ₂' ℓᵥ' ℓ₃' ℓ₄' ℓ₅') : Set (ℓₑ ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓᵥ ⊔ ℓ₃ ⊔ ℓ₄ ⊔ ℓ₅ ⊔ ℓₑ' ⊔ ℓ₁' ⊔ ℓ₂' ⊔ ℓᵥ' ⊔ ℓ₃' ⊔ ℓ₄' ⊔ ℓ₅') where
-  module A = Hypergraph A
-  module B = Hypergraph B
-  module A-tos = TOSubsets A.V-setoid
-  module B-tos = TOSubsets B.V-setoid
-  field
-    V-hom : A.V → B.V
-    E-hom : A.E → B.E
+  E-inputs :  Vec-of-Vecs
+  E-inputs  = output ∷ (map  proj₁          E)
   
-  map_totally_ordered_subsets : ∀ {l1 l2} → B-tos.totally_ordered_subsets {l1} {l2} → A-tos.totally_ordered_subsets {l1} {l2}
-  map_totally_ordered_subsets (pred , rel , totalOrd) = (pred ∘ V-hom , (rel on V-hom-pair) , record
-    { isPartialOrder = record
-      { isPreorder = {!!}
-      ; antisym = λ {x} {y} → antisym {map V-hom id x} {map V-hom id y}
-      }
-    ; total = λ x y → total (V-hom-pair x) (V-hom-pair y)
-    })
-    where
-      V-hom-pair : Σ A.V (pred ∘ V-hom) → Σ B.V pred
-      V-hom-pair = map V-hom id
-      open IsTotalOrder totalOrd
-      -- antisym' : ∀ {i j} → rel (V-hom-pair i) (V-hom-pair j) → rel (V-hom-pair j) (V-hom-pair i) → _
-      
+  E-outputs : Vec-of-Vecs
+  E-outputs = input  ∷ (map (proj₁ ∘ proj₂) E)
 
-  -- field
-  --   s-coherence : ∀ {e} → (B.s E-hom e) () 
--}
+  index-pair : Vec-of-Vecs → Set
+  index-pair v = Σ (Fin (suc E-size)) (λ i → Fin (proj₁ (lookup v i)))
+
+  index-eq : (v : Vec-of-Vecs) → Rel (index-pair v) lzero
+  index-eq v = λ {(i , j) (i' , j') → Σ (i ≡ i') (λ {refl → j ≡ j'})}
+  
+  lookup² : (v : Vec-of-Vecs) → index-pair v → T
+  lookup² v = λ {(i , j) → lookup (proj₂ (lookup v i)) j}
+  
+  field
+    conns→ : index-pair E-outputs → index-pair E-inputs
+    conns← : index-pair E-inputs → index-pair E-outputs
+    type-match : (ij : index-pair E-outputs) → lookup² E-outputs ij T.≈ lookup² E-inputs (conns→ ij)
+    one-to-one : Inverseᵇ (index-eq E-outputs) (index-eq E-inputs) conns→ conns←
+
+
+
+record SimpleHypergraph {ℓₒ ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
+  field
+    hg : Hypergraph {ℓₒ} input output
+
+  open Hypergraph hg public
+
+  field
+    _≲_ : Rel (Fin E-size) ℓᵣ
+    partial_order : IsPartialOrder _≡_ _≲_
+    conns-resp-≲     : (i : Fin E-size) → (j : Fin (proj₁ (lookup E-outputs (fsuc i)))) →
+                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤ (i ≲_))
+    conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (lookup E-outputs (fsuc i)))) →
+                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤ (i ≢_))
+    
+
+
+--Use Example:
+module _ (t : T) where
+  
+  2* : Σ _ (Vec T)
+  2* = 2 , (t ∷ t ∷ [])
+  1* : Σ _ (Vec T)
+  1* = 1 , (t ∷ [])
+  
+  data Obj : Σ _ (Vec T) → Σ _ (Vec T) → Set where
+    A B : Obj 2* 2*
+    C   : Obj 2* 1*
+
+  input = 2*
+  output = 1*
+
+  diagram : Hypergraph input output
+  diagram = record
+              { Obj = Obj
+              ; E-size = E-size
+              ; E = E
+              ; conns→ = conns→
+              ; conns← = conns←
+              ; type-match = type-match
+              ; one-to-one = one-to-one
+              }
+              where
+                E-size = 4
+                E = (_ , _ , A) ∷ (_ , _ , A) ∷ (_ , _ , B) ∷ (_ , _ , C) ∷ []
+                conns→ : _
+                conns→ (fzero , fzero)                                = (# 1) , (# 1)
+                conns→ (fzero , fsuc fzero)                           = (# 2) , (# 1)
+                conns→ (fsuc fzero , fzero)                           = (# 2) , (# 0)
+                conns→ (fsuc fzero , fsuc fzero)                      = (# 3) , (# 0)
+                conns→ (fsuc (fsuc fzero) , fzero)                    = (# 1) , (# 0)
+                conns→ (fsuc (fsuc fzero) , fsuc fzero)               = (# 3) , (# 1)
+                conns→ (fsuc (fsuc (fsuc fzero)) , fzero)             = (# 4) , (# 0)
+                conns→ (fsuc (fsuc (fsuc fzero)) , fsuc fzero)        = (# 4) , (# 1)
+                conns→ (fsuc (fsuc (fsuc (fsuc fzero))) , fzero)      = (# 0) , (# 0)
+                conns← : _
+                conns← (fzero , fzero)                                = (# 4) , (# 0)
+                conns← (fsuc fzero , fzero)                           = (# 2) , (# 0)
+                conns← (fsuc fzero , fsuc fzero)                      = (# 0) , (# 0)
+                conns← (fsuc (fsuc fzero) , fzero)                    = (# 1) , (# 0)
+                conns← (fsuc (fsuc fzero) , fsuc fzero)               = (# 0) , (# 1)
+                conns← (fsuc (fsuc (fsuc fzero)) , fzero)             = (# 1) , (# 1)
+                conns← (fsuc (fsuc (fsuc fzero)) , fsuc fzero)        = (# 2) , (# 1)
+                conns← (fsuc (fsuc (fsuc (fsuc fzero))) , fzero)      = (# 3) , (# 0)
+                conns← (fsuc (fsuc (fsuc (fsuc fzero))) , fsuc fzero) = (# 3) , (# 1)
+                type-match : _
+                type-match (fzero , fzero)                                = T.refl
+                type-match (fzero , fsuc fzero)                           = T.refl
+                type-match (fsuc fzero , fzero)                           = T.refl
+                type-match (fsuc fzero , fsuc fzero)                      = T.refl
+                type-match (fsuc (fsuc fzero) , fzero)                    = T.refl
+                type-match (fsuc (fsuc fzero) , fsuc fzero)               = T.refl
+                type-match (fsuc (fsuc (fsuc fzero)) , fzero)             = T.refl
+                type-match (fsuc (fsuc (fsuc fzero)) , fsuc fzero)        = T.refl
+                type-match (fsuc (fsuc (fsuc (fsuc fzero))) , fzero)      = T.refl
+                one-to-oneₗ : _
+                one-to-oneₗ (fzero , fzero)                                = refl , refl
+                one-to-oneₗ (fsuc fzero , fzero)                           = refl , refl
+                one-to-oneₗ (fsuc fzero , fsuc fzero)                      = refl , refl
+                one-to-oneₗ (fsuc (fsuc fzero) , fzero)                    = refl , refl
+                one-to-oneₗ (fsuc (fsuc fzero) , fsuc fzero)               = refl , refl
+                one-to-oneₗ (fsuc (fsuc (fsuc fzero)) , fzero)             = refl , refl
+                one-to-oneₗ (fsuc (fsuc (fsuc fzero)) , fsuc fzero)        = refl , refl
+                one-to-oneₗ (fsuc (fsuc (fsuc (fsuc fzero))) , fzero)      = refl , refl
+                one-to-oneₗ (fsuc (fsuc (fsuc (fsuc fzero))) , fsuc fzero) = refl , refl
+                one-to-oneᵣ : _
+                one-to-oneᵣ (fzero , fzero)                                = refl , refl
+                one-to-oneᵣ (fzero , fsuc fzero)                           = refl , refl
+                one-to-oneᵣ (fsuc fzero , fzero)                           = refl , refl
+                one-to-oneᵣ (fsuc fzero , fsuc fzero)                      = refl , refl
+                one-to-oneᵣ (fsuc (fsuc fzero) , fzero)                    = refl , refl
+                one-to-oneᵣ (fsuc (fsuc fzero) , fsuc fzero)               = refl , refl
+                one-to-oneᵣ (fsuc (fsuc (fsuc fzero)) , fzero)             = refl , refl
+                one-to-oneᵣ (fsuc (fsuc (fsuc fzero)) , fsuc fzero)        = refl , refl
+                one-to-oneᵣ (fsuc (fsuc (fsuc (fsuc fzero))) , fzero)      = refl , refl
+                one-to-one : _
+                one-to-one = one-to-oneₗ , one-to-oneᵣ
