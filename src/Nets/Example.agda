@@ -47,7 +47,7 @@ diagram = record
             }
             where
               E-size = 4
-              E = (2* , 2* , A) ∷ (_ , _ , A) ∷ (_ , _ , B) ∷ (_ , _ , C) ∷ []
+              E = (_ , _ , A) ∷ (_ , _ , A) ∷ (_ , _ , B) ∷ (_ , _ , C) ∷ []
               conns→ : _
               conns→ (0F , 0F) = 1F , 1F
               conns→ (0F , 1F) = 2F , 1F
