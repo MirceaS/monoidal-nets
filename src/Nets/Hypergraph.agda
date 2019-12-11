@@ -11,14 +11,14 @@ open import Relation.Binary
 open import Relation.Binary.PropositionalEquality using (_≢_ ; cong ; sym ; trans)
 open import Function using (_∘_ ; Inverseᵇ ; id)
 
-module Nets.Hypergraph {ℓₜ ℓₜᵣ ℓₒ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ) (Obj : Σ _ (Vec (Setoid.Carrier Types-setoid)) → Σ _ (Vec (Setoid.Carrier Types-setoid)) → Set ℓₒ) where
+module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ) {ℓₒ : Level} (Obj : Σ _ (Vec (Setoid.Carrier Types-setoid)) → Σ _ (Vec (Setoid.Carrier Types-setoid)) → Set ℓₒ) where
 
 module T = Setoid Types-setoid
 T = T.Carrier
 
 ------some technical utilities------
-data ⊤ {l : Level} : Set l where
-  tt : ⊤
+data ⊤' {l : Level} : Set l where
+  tt : ⊤'
 
 Fin-pm : {ℓ₁ : Level} {n : ℕ} → Fin (suc n) → (A : Set ℓ₁) → (B : Fin n → Set ℓ₁) → Set ℓ₁
 Fin-pm fzero A _ = A
@@ -28,7 +28,7 @@ Fin-pm (fsuc i) _ B = B i
 --lemma1 (na , A) (zero , []) = 
 ------------------------------------
 
-record Hypergraph (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓₒ)) where
+record Hypergraph (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
   field
     E-size : ℕ
     E : Vec (∃₂ Obj) E-size
@@ -69,9 +69,9 @@ record SimpleHypergraph {ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (
     _≲_ : Rel (Fin E-size) ℓᵣ
     partial_order : IsPartialOrder _≡_ _≲_
     conns-resp-≲     : (i : Fin E-size) → (j : Fin (proj₁ (lookup E-outputs (fsuc i)))) →
-                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤ (i ≲_))
+                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≲_))
     conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (lookup E-outputs (fsuc i)))) →
-                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤ (i ≢_))
+                       (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≢_))
     
 
 record _≋_ {A B : Σ _ (Vec T)} (G H : Hypergraph A B) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓₒ)) where
