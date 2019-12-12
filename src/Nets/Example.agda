@@ -5,18 +5,12 @@ open import Data.Unit.Properties using (≡-setoid)
 open import Data.Product using (Σ ; _,_)
 open import Data.Nat
 open import Data.Vec
-open import Data.Fin renaming (zero to fzero ; suc to fsuc)
+open import Data.Fin.Patterns
+
 
 open import Nets.Hypergraph ≡-setoid
 
 module Nets.Example where
-
-pattern 0F = fzero
-pattern 1F = fsuc 0F
-pattern 2F = fsuc 1F
-pattern 3F = fsuc 2F
-pattern 4F = fsuc 3F
-pattern 5F = fsuc 4F
 
 --shorthands for common type interfaces
 0* : Σ _ (Vec ⊤)
