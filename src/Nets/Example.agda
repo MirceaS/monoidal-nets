@@ -1,16 +1,18 @@
-open import Level
+open import Level renaming (zero to lzero)
 open import Agda.Builtin.Equality
 open import Data.Unit
 open import Data.Unit.Properties using (≡-setoid)
 open import Data.Product using (Σ ; _,_)
+open import Data.Sum using (inj₁ ; inj₂)
 open import Data.Nat
 open import Data.Vec
+open import Data.Fin using (Fin)
 open import Data.Fin.Patterns
 
 
 open import Nets.Hypergraph ≡-setoid
 
-module Nets.Example where
+module Nets.Example where 
 
 --shorthands for common type interfaces
 0* : Σ _ (Vec ⊤)
@@ -25,72 +27,72 @@ data Obj : Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Set where
   A B : Obj 2* 2*
   C   : Obj 2* 1*
 
-data hierarchical : Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Set where
-  ↓ : Hypergraph hierarchical 2* 1* → hierarchical 1* 1*
-  app : hierarchical 2* 1*
-  ⊢ : {input : Σ _ (Vec ⊤)} → hierarchical input 0*
+data hierarchical : Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Set₁ where
+   ↓ : Hypergraph hierarchical {lzero} 2* 1* → hierarchical 1* 1*
+   app : hierarchical 2* 1*
+   ⊢ : {input : Σ _ (Vec ⊤)} → hierarchical input 0*
 
 diagram : Hypergraph Obj 2* 1*
 diagram = record
-            { E-size = E-size
-            ; E = E
+            { E = E
+            ; o = o
             ; conns→ = conns→
             ; conns← = conns←
             ; type-match = type-match
             ; one-to-one = one-to-one
             }
             where
-              E-size = 4
-              E = (_ , _ , A) ∷ (_ , _ , A) ∷ (_ , _ , B) ∷ (_ , _ , C) ∷ []
+              E = Fin 4
+              o = lookup ((_ , _ , A) ∷ (_ , _ , A) ∷ (_ , _ , B) ∷ (_ , _ , C) ∷ [])
               conns→ : _
-              conns→ (0F , 0F) = 1F , 1F
-              conns→ (0F , 1F) = 2F , 1F
-              conns→ (1F , 0F) = 2F , 0F
-              conns→ (1F , 1F) = 3F , 0F
-              conns→ (2F , 0F) = 1F , 0F
-              conns→ (2F , 1F) = 3F , 1F
-              conns→ (3F , 0F) = 4F , 0F
-              conns→ (3F , 1F) = 4F , 1F
-              conns→ (4F , 0F) = 0F , 0F
+              conns→ (inj₁ 0F) = inj₂ (0F , 1F)
+              conns→ (inj₁ 1F) = inj₂ (1F , 1F)
+              conns→ (inj₂ (0F , 0F)) = inj₂ (1F , 0F)
+              conns→ (inj₂ (0F , 1F)) = inj₂ (2F , 0F)
+              conns→ (inj₂ (1F , 0F)) = inj₂ (0F , 0F)
+              conns→ (inj₂ (1F , 1F)) = inj₂ (2F , 1F)
+              conns→ (inj₂ (2F , 0F)) = inj₂ (3F , 0F)
+              conns→ (inj₂ (2F , 1F)) = inj₂ (3F , 1F)
+              conns→ (inj₂ (3F , 0F)) = inj₁ 0F
               conns← : _
-              conns← (0F , 0F) = 4F , 0F
-              conns← (1F , 0F) = 2F , 0F
-              conns← (1F , 1F) = 0F , 0F
-              conns← (2F , 0F) = 1F , 0F
-              conns← (2F , 1F) = 0F , 1F
-              conns← (3F , 0F) = 1F , 1F
-              conns← (3F , 1F) = 2F , 1F
-              conns← (4F , 0F) = 3F , 0F
-              conns← (4F , 1F) = 3F , 1F
+              conns← (inj₁ 0F) = inj₂ (3F , 0F)
+              conns← (inj₂ (0F , 0F)) = inj₂ (1F , 0F)
+              conns← (inj₂ (0F , 1F)) = inj₁ 0F
+              conns← (inj₂ (1F , 0F)) = inj₂ (0F , 0F)
+              conns← (inj₂ (1F , 1F)) = inj₁ 1F
+              conns← (inj₂ (2F , 0F)) = inj₂ (0F , 1F)
+              conns← (inj₂ (2F , 1F)) = inj₂ (1F , 1F)
+              conns← (inj₂ (3F , 0F)) = inj₂ (2F , 0F)
+              conns← (inj₂ (3F , 1F)) = inj₂ (2F , 1F)
               type-match : _
-              type-match (0F , 0F) = refl
-              type-match (0F , 1F) = refl
-              type-match (1F , 0F) = refl
-              type-match (1F , 1F) = refl
-              type-match (2F , 0F) = refl
-              type-match (2F , 1F) = refl
-              type-match (3F , 0F) = refl
-              type-match (3F , 1F) = refl
-              type-match (4F , 0F) = refl
+              type-match (inj₁ 0F) = refl
+              type-match (inj₁ 1F) = refl
+              type-match (inj₂ (0F , 0F)) = refl
+              type-match (inj₂ (0F , 1F)) = refl
+              type-match (inj₂ (1F , 0F)) = refl
+              type-match (inj₂ (1F , 1F)) = refl
+              type-match (inj₂ (2F , 0F)) = refl
+              type-match (inj₂ (2F , 1F)) = refl
+              type-match (inj₂ (3F , 0F)) = refl
               one-to-oneₗ : _
-              one-to-oneₗ (0F , 0F) = refl , refl
-              one-to-oneₗ (1F , 0F) = refl , refl
-              one-to-oneₗ (1F , 1F) = refl , refl
-              one-to-oneₗ (2F , 0F) = refl , refl
-              one-to-oneₗ (2F , 1F) = refl , refl
-              one-to-oneₗ (3F , 0F) = refl , refl
-              one-to-oneₗ (3F , 1F) = refl , refl
-              one-to-oneₗ (4F , 0F) = refl , refl
-              one-to-oneₗ (4F , 1F) = refl , refl
+              one-to-oneₗ (inj₁ 0F) = refl
+              one-to-oneₗ (inj₂ (0F , 0F)) = refl
+              one-to-oneₗ (inj₂ (0F , 1F)) = refl
+              one-to-oneₗ (inj₂ (1F , 0F)) = refl
+              one-to-oneₗ (inj₂ (1F , 1F)) = refl
+              one-to-oneₗ (inj₂ (2F , 0F)) = refl
+              one-to-oneₗ (inj₂ (2F , 1F)) = refl
+              one-to-oneₗ (inj₂ (3F , 0F)) = refl
+              one-to-oneₗ (inj₂ (3F , 1F)) = refl
               one-to-oneᵣ : _
-              one-to-oneᵣ (0F , 0F) = refl , refl
-              one-to-oneᵣ (0F , 1F) = refl , refl
-              one-to-oneᵣ (1F , 0F) = refl , refl
-              one-to-oneᵣ (1F , 1F) = refl , refl
-              one-to-oneᵣ (2F , 0F) = refl , refl
-              one-to-oneᵣ (2F , 1F) = refl , refl
-              one-to-oneᵣ (3F , 0F) = refl , refl
-              one-to-oneᵣ (3F , 1F) = refl , refl
-              one-to-oneᵣ (4F , 0F) = refl , refl
+              one-to-oneᵣ (inj₁ 0F) = refl
+              one-to-oneᵣ (inj₁ 1F) = refl
+              one-to-oneᵣ (inj₂ (0F , 0F)) = refl
+              one-to-oneᵣ (inj₂ (0F , 1F)) = refl
+              one-to-oneᵣ (inj₂ (1F , 0F)) = refl
+              one-to-oneᵣ (inj₂ (1F , 1F)) = refl
+              one-to-oneᵣ (inj₂ (2F , 0F)) = refl
+              one-to-oneᵣ (inj₂ (2F , 1F)) = refl
+              one-to-oneᵣ (inj₂ (3F , 0F)) = refl
               one-to-one : _
               one-to-one = one-to-oneₗ , one-to-oneᵣ
