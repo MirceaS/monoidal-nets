@@ -45,24 +45,23 @@ record Hypergraph {l : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : S
     E : Set l
     o : E → ∃₂ Obj
 
-  private
-    len = proj₁
-    vec = proj₂
+  len = proj₁
+  vec = proj₂
 
-    s : E → Σ _ (Vec T) 
-    s = proj₁         ∘ o
+  s : E → Σ _ (Vec T) 
+  s = proj₁         ∘ o
   
-    t : E → Σ _ (Vec T) 
-    t = proj₁ ∘ proj₂ ∘ o
+  t : E → Σ _ (Vec T)
+  t = proj₁ ∘ proj₂ ∘ o
 
-    in-index  = (Fin (len output)) ⊎ (Σ E (Fin ∘ len ∘ s))
-    out-index = (Fin (len input))  ⊎ (Σ E (Fin ∘ len ∘ t))
+  in-index  = (Fin (len output)) ⊎ (Σ E (Fin ∘ len ∘ s))
+  out-index = (Fin (len input))  ⊎ (Σ E (Fin ∘ len ∘ t))
 
-    in-lookup  : in-index  → T
-    in-lookup  = [ lookup (vec output) , (λ {(e , i) → lookup (vec (s e)) i})]′
+  in-lookup  : in-index  → T
+  in-lookup  = [ lookup (vec output) , (λ {(e , i) → lookup (vec (s e)) i})]′
 
-    out-lookup : out-index → T
-    out-lookup = [ lookup (vec input)  , (λ {(e , i) → lookup (vec (t e)) i})]′
+  out-lookup : out-index → T
+  out-lookup = [ lookup (vec input)  , (λ {(e , i) → lookup (vec (t e)) i})]′
 
   field
     conns→ : out-index → in-index
@@ -320,6 +319,29 @@ _⊚_ {_} {_} {na , A} {nb , B} {nc , C} BC AB = record
                                   one-to-one : _
                                   one-to-one = one-to-one₁ , one-to-one₂
 
+record _≋_ {l} {A B : Σ _ (Vec T)} (G H : Hypergraph {l} A B) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
+  module G = Hypergraph G
+  module H = Hypergraph H
+  field
+    α : G.E → H.E
+    α′ : H.E → G.E
+
+    one-to-one : Inverseᵇ _≡_ _≡_ α α′
+    obj-resp : {e : G.E} → G.o e ≡ H.o (α e)
+
+  α-in-index :  G.in-index  → H.in-index
+  α-in-index  = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁        ) obj-resp)))
+  α-out-index : G.out-index → H.out-index
+  α-out-index = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁ ∘ proj₂) obj-resp)))
+
+  field
+    conns→-resp : {i : G.out-index} →
+                   H.conns→ (α-out-index i) ≡ α-in-index (G.conns→ i)
+    -- this one is redundant
+    -- conns←-resp : {i : G.in-index} →
+    --                H.conns← (α-in-index i) ≡ α-out-index (G.conns← i)
+
+
 -- record SimpleHypergraph {ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
 --   field
 --     hg : Hypergraph input output
@@ -333,30 +355,3 @@ _⊚_ {_} {_} {na , A} {nb , B} {nc , C} BC AB = record
 --                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≲_))
 --     conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (E-outputs at (fsuc i)))) →
 --                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≢_))
-
-
--- record _≋_ {A B : Σ _ (Vec T)} (G H : Hypergraph A B) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓₒ)) where
---   module G = Hypergraph G
---   module H = Hypergraph H
---   field
---     same-size : G.E-size ≡ H.E-size
---     α  : Fin G.E-size → Fin H.E-size
---     α' : Fin H.E-size → Fin G.E-size
-    
---     one-to-one : Inverseᵇ _≡_ _≡_ α α'
---     obj-resp : {i : Fin G.E-size} → G.E at i ≡ H.E at (α i)
-
---   β : Fin (suc G.E-size) → Fin (suc H.E-size)
---   β = λ {fzero → fzero ; (fsuc i) → fsuc (α i)}
-
---   γ : (f : ∃₂ Obj → Σ _ (Vec T)) (spl : Σ _ (Vec T)) (i : Fin (suc G.E-size)) → Fin (proj₁ ((spl ∷ (map f G.E)) at i)) → Fin (proj₁ ((spl ∷ (map f H.E)) at (β i)))
---   γ = λ f _ → λ {fzero → id ; (fsuc j) → cast (cong proj₁ (trans
---                                                                (trans
---                                                                     (lookup-map    j  f G.E)
---                                                                     (cong f obj-resp))
---                                                                (sym (lookup-map (α j) f H.E))))}
-
---   field
---     conns-resp : {ij : G.index-pair G.E-outputs} → H.index-eq H.E-inputs
---                                                         (pair-map β (λ {i} → γ proj₁ B i) (G.conns→ ij))
---                                                         (H.conns→ (pair-map β (λ {i} → γ (proj₁ ∘ proj₂) A i) ij))
