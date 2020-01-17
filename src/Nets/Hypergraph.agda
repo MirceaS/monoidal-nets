@@ -7,9 +7,11 @@ open import Data.Nat.Properties using (+-suc)
 open import Data.Vec hiding (splitAt)
 open import Data.Vec.Properties using (lookup-map)
 open import Data.Fin renaming (zero to fzero ; suc to fsuc ; _+_ to _+f_)
+open import Data.Empty
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Function using (_∘_ ; Inverseᵇ ; id)
+open import Categories.Category
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
 module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ)
@@ -39,6 +41,10 @@ map-++-commute f []       ys = refl
 map-++-commute f (x ∷ xs) ys =
   cong ((f x) ∷_) (map-++-commute f xs ys)
 ------------------------------------}
+
+thm : ∀ {n} x → x ≡ cast {n} {n} refl x
+thm fzero = refl
+thm (fsuc x) = cong fsuc (thm x)
 
 record Hypergraph {l : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
   field
@@ -327,20 +333,77 @@ record _≋_ {l} {A B : Σ _ (Vec T)} (G H : Hypergraph {l} A B) : Set ((lsuc l)
     α′ : H.E → G.E
 
     one-to-one : Inverseᵇ _≡_ _≡_ α α′
-    obj-resp : {e : G.E} → G.o e ≡ H.o (α e)
+    obj-resp : (e : G.E) → G.o e ≡ H.o (α e)
 
   α-in-index :  G.in-index  → H.in-index
-  α-in-index  = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁        ) obj-resp)))
+  α-in-index  = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁        ) (obj-resp _))))
   α-out-index : G.out-index → H.out-index
-  α-out-index = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁ ∘ proj₂) obj-resp)))
+  α-out-index = Sum.map₂ (Prod.map α (cast (cong (proj₁ ∘ proj₁ ∘ proj₂) (obj-resp _))))
 
   field
-    conns→-resp : {i : G.out-index} →
+    conns→-resp : (i : G.out-index) →
                    H.conns→ (α-out-index i) ≡ α-in-index (G.conns→ i)
     -- this one is redundant
     -- conns←-resp : {i : G.in-index} →
     --                H.conns← (α-in-index i) ≡ α-out-index (G.conns← i)
 
+
+assoc : {l : Level}
+        {A B C D : Σ _ (Vec T)} {f : Hypergraph {l} A B}
+        {g : Hypergraph {l} B C} {h : Hypergraph {l} C D} →
+        ((h ⊚ g) ⊚ f) ≋ (h ⊚ (g ⊚ f))
+assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
+              { α = α
+              ; α′ = α′
+              ; one-to-one = one-to-one
+              ; obj-resp = obj-resp
+              ; conns→-resp = conns→-resp
+              }
+              where
+                module f = Hypergraph f
+                module g = Hypergraph g
+                module h = Hypergraph h
+                α : _
+                α (inj₁ x) = inj₁ (inj₁ x)
+                α (inj₂ (inj₁ x)) = inj₁ (inj₂ x)
+                α (inj₂ (inj₂ x)) = inj₂ x
+                α′ : _    
+                α′ (inj₁ (inj₁ x)) = inj₁ x
+                α′ (inj₁ (inj₂ x)) = inj₂ (inj₁ x)
+                α′ (inj₂ x) = inj₂ (inj₂ x)
+                one-to-one₁ : _
+                one-to-one₁ (inj₁ (inj₁ x)) = refl
+                one-to-one₁ (inj₁ (inj₂ x)) = refl
+                one-to-one₁ (inj₂ x) = refl
+                one-to-one₂ : _
+                one-to-one₂ (inj₁ x) = refl
+                one-to-one₂ (inj₂ (inj₁ x)) = refl
+                one-to-one₂ (inj₂ (inj₂ x)) = refl
+                one-to-one : _
+                one-to-one = one-to-one₁ , one-to-one₂
+                obj-resp : _
+                obj-resp (inj₁ x) = refl
+                obj-resp (inj₂ (inj₁ x)) = refl
+                obj-resp (inj₂ (inj₂ x)) = refl
+                conns→-resp : _
+                conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
+                conns→-resp (inj₁ i) | (inj₁ j) with (g.conns→ (inj₁ j))
+                conns→-resp (inj₁ i) | (inj₁ j) | (inj₁ k) with (h.conns→ (inj₁ k))
+                conns→-resp (inj₁ i) | (inj₁ j) | (inj₁ k) | (inj₁ l)       = refl
+                conns→-resp (inj₁ i) | (inj₁ j) | (inj₁ k) | (inj₂ (e , l)) = cong (inj₂ ∘ ((inj₂ e) ,_)) (thm l)
+                conns→-resp (inj₁ i) | (inj₁ j) | (inj₂ (e , k))            = cong (inj₂ ∘ ((inj₁ (inj₂ e)) ,_)) (thm k)
+                conns→-resp (inj₁ i) | (inj₂ (e , j))                       = cong (inj₂ ∘ ((inj₁ (inj₁ e)) ,_)) (thm j)
+                conns→-resp (inj₂ ((inj₁ e′) , i)) with (proj₁ (f.t e′))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (suc n) = {!!}
+                {-conns→-resp (inj₂ ((inj₁ e′) , i)) with (f.conns→ (inj₂ (e′ , i)))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) with (g.conns→ (inj₁ j))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) with (h.conns→ (inj₁ k))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) | (inj₁ l)       = {!!}
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) | (inj₂ (e , l)) = {!!}
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₂ (e , k))            = {!!}
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₂ (e , j))                       = {!!}-}
+                conns→-resp (inj₂ ((inj₂ (inj₁ x)) , i)) = {!!}
+                conns→-resp (inj₂ ((inj₂ (inj₂ x)) , i)) = {!!}
 
 -- record SimpleHypergraph {ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
 --   field
@@ -355,3 +418,26 @@ record _≋_ {l} {A B : Σ _ (Vec T)} (G H : Hypergraph {l} A B) : Set ((lsuc l)
 --                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≲_))
 --     conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (E-outputs at (fsuc i)))) →
 --                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≢_))
+
+Hypergraph-Category : Category _ _ _
+Hypergraph-Category = record
+                        { Obj = Σ _ (Vec T)
+                        ; _⇒_ = Hypergraph
+                        ; _≈_ = _≋_
+                        ; id = record
+                          { E = ⊥
+                          ; o = λ ()
+                          ; conns→ = λ {(inj₁ x) → inj₁ x}
+                          ; conns← = λ {(inj₁ x) → inj₁ x}
+                          ; type-match = λ {(inj₁ _) → T.refl}
+                          ; one-to-one = (λ {(inj₁ _) → refl}) ,
+                                         (λ {(inj₁ _) → refl})
+                          }
+                        ; _∘_ = _⊚_
+                        ; assoc = {!!}
+                        ; sym-assoc = {!!}
+                        ; identityˡ = {!!}
+                        ; identityʳ = {!!}
+                        ; equiv = {!!}
+                        ; ∘-resp-≈ = {!!}
+                        }
