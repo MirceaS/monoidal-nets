@@ -385,6 +385,7 @@ assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
                 obj-resp (inj₁ x) = refl
                 obj-resp (inj₂ (inj₁ x)) = refl
                 obj-resp (inj₂ (inj₂ x)) = refl
+                open ≡-Reasoning
                 conns→-resp : _
                 conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
                 conns→-resp (inj₁ i) | (inj₁ j) with (g.conns→ (inj₁ j))
@@ -393,17 +394,56 @@ assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
                 conns→-resp (inj₁ i) | (inj₁ j) | (inj₁ k) | (inj₂ (e , l)) = cong (inj₂ ∘ ((inj₂ e) ,_)) (thm l)
                 conns→-resp (inj₁ i) | (inj₁ j) | (inj₂ (e , k))            = cong (inj₂ ∘ ((inj₁ (inj₂ e)) ,_)) (thm k)
                 conns→-resp (inj₁ i) | (inj₂ (e , j))                       = cong (inj₂ ∘ ((inj₁ (inj₁ e)) ,_)) (thm j)
-                conns→-resp (inj₂ ((inj₁ e′) , i)) with (proj₁ (f.t e′))
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (suc n) = {!!}
-                {-conns→-resp (inj₂ ((inj₁ e′) , i)) with (f.conns→ (inj₂ (e′ , i)))
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) with (g.conns→ (inj₁ j))
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) with (h.conns→ (inj₁ k))
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) | (inj₁ l)       = {!!}
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₁ k) | (inj₂ (e , l)) = {!!}
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | (inj₂ (e , k))            = {!!}
-                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₂ (e , j))                       = {!!}-}
-                conns→-resp (inj₂ ((inj₂ (inj₁ x)) , i)) = {!!}
-                conns→-resp (inj₂ ((inj₂ (inj₂ x)) , i)) = {!!}
+                conns→-resp (inj₂ ((inj₁ e′) , i)) with (f.conns→ (inj₂ (e′ , i))) | (inspect f.conns→ (inj₂ (e′ , i)))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | [ i→j ] with (g.conns→ (inj₁ j)) | (inspect g.conns→ (inj₁ j))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | [ i→j ] | (inj₁ k) | [ j→k ] with (h.conns→ (inj₁ k)) | (inspect h.conns→ (inj₁ k))
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | [ i→j ] | (inj₁ k) | [ j→k ] | (inj₁ l) | [ k→l ]       = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ f.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j→k ⟩
+                  _ ≡⟨ cong [ _ , _ ]′ k→l ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | [ i→j ] | (inj₁ k) | [ j→k ] | (inj₂ (e , l)) | [ k→l ] = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ f.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j→k ⟩
+                  _ ≡⟨ cong [ _ , _ ]′ k→l ⟩
+                  _ ≡⟨ cong (inj₂ ∘ (_ ,_)) (thm l) ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₁ j) | [ i→j ] | (inj₂ (e , k)) | [ j→k ]                       = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ f.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j→k ⟩
+                  _ ≡⟨ cong (inj₂ ∘ (_ ,_)) (thm k) ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₁ e′) , i)) | (inj₂ (e , j)) | [ i→j ]                                             = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ f.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong (inj₂ ∘ (_ ,_)) (thm j) ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₂ (inj₁ e′)) , i)) with (g.conns→ (inj₂ (e′ , i))) | (inspect g.conns→ (inj₂ (e′ , i)))
+                conns→-resp (inj₂ ((inj₂ (inj₁ e′)) , i)) | (inj₁ j) | [ i→j ] with (h.conns→ (inj₁ j)) | (inspect h.conns→ (inj₁ j))
+                conns→-resp (inj₂ ((inj₂ (inj₁ e′)) , i)) | (inj₁ j) | [ i→j ] | (inj₁ k) | [ j→k ] = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ g.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₂ (inj₁ e′)) , i)) | (inj₁ j) | [ i→j ] | (inj₂ (e , k)) | [ j→k ] = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ g.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+                  _ ≡⟨ cong (inj₂ ∘ (_ ,_)) (thm k) ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₂ (inj₁ e′)) , i)) | (inj₂ (e , j)) | [ i→j ] = begin
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′ ∘ g.conns→ ∘ inj₂ ∘ (e′ ,_)) (sym (thm i)) ⟩
+                  _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) i→j ⟩
+                  _ ≡⟨ cong (inj₂ ∘ (_ ,_)) (thm j) ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₂ (inj₂ e′)) , i)) with (h.conns→ (inj₂ (e′ , i))) | (inspect h.conns→ (inj₂ (e′ , i)))
+                conns→-resp (inj₂ ((inj₂ (inj₂ e′)) , i)) | (inj₁ j) | [ i→j ] = begin
+                  _ ≡⟨ {!!} ⟩
+                  _ ∎
+                conns→-resp (inj₂ ((inj₂ (inj₂ e′)) , i)) | (inj₂ (e , j)) | [ i→j ] = {!!}
 
 -- record SimpleHypergraph {ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
 --   field
@@ -434,7 +474,7 @@ Hypergraph-Category = record
                                          (λ {(inj₁ _) → refl})
                           }
                         ; _∘_ = _⊚_
-                        ; assoc = {!!}
+                        ; assoc = assoc
                         ; sym-assoc = {!!}
                         ; identityˡ = {!!}
                         ; identityʳ = {!!}
