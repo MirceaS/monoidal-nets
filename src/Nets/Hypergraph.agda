@@ -1,6 +1,6 @@
 open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
-open import Data.Product as Prod using (Σ ; _,_ ; ∃₂ ; proj₁ ; proj₂)
+open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂)
 open import Data.Sum as Sum using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
 open import Data.Nat hiding (_⊔_)
 open import Data.Nat.Properties using (+-suc)
@@ -15,59 +15,65 @@ open import Categories.Category
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
 module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ)
-                       {ℓₒ : Level} (Obj :
-                         Σ _ (Vec (Setoid.Carrier Types-setoid)) →
-                         Σ _ (Vec (Setoid.Carrier Types-setoid)) →
-                         Set ℓₒ
+                       {ℓₒ ℓₒᵣ : Level}
+                       (Obj-setoid :
+                         Σ ℕ (Vec (Setoid.Carrier Types-setoid)) →
+                         Σ ℕ (Vec (Setoid.Carrier Types-setoid)) →
+                         Setoid ℓₒ ℓₒᵣ
                        ) where
 
+
+--convinient way to represent lists as Vectors along with their size
+List : ∀ {l} → Set l → Set l
+List A = Σ ℕ (Vec A)
+
+len         = proj₁
+vec-of-list = proj₂
+
+
+--bringing the contents of the setoids into scope as T._≈_ or Obj._≈_ etc.
 module T = Setoid Types-setoid
 T = T.Carrier
 
-{------some technical utilities------
-data ⊤' {l : Level} : Set l where
-  tt : ⊤'
+module Obj (input : _) (output : _) where
+  open Setoid (Obj-setoid input output) public
+Obj = Obj.Carrier
 
-_⟩⟨_ = cong
-infix 0 ⟩⟨
 
-Fin-pm : {ℓ₁ : Level} {n : ℕ} → Fin (suc n) → (A : Set ℓ₁) → (B : Fin n → Set ℓ₁) → Set ℓ₁
-Fin-pm fzero A _ = A
-Fin-pm (fsuc i) _ B = B i
-
-map-++-commute : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {n m : ℕ} (xs : Vec A n) (ys : Vec A m) →
-                 map f (xs ++ ys) ≡ map f xs ++ map f ys
-map-++-commute f []       ys = refl
-map-++-commute f (x ∷ xs) ys =
-  cong ((f x) ∷_) (map-++-commute f xs ys)
-------------------------------------}
+--utilities
+Σ₂ : ∀ {a} {b} {c} (A : Set a) (B : Set b)
+     (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
+Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
 
 thm : ∀ {n} x → x ≡ cast {n} {n} refl x
 thm fzero = refl
 thm (fsuc x) = cong fsuc (thm x)
 
-record Hypergraph {l : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
+
+
+
+
+record Hypergraph {l : Level} (input : List T) (output : List T) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
   field
     E : Set l
-    o : E → ∃₂ Obj
+    o : E → Σ₂ (List T) (List T) Obj
 
-  len = proj₁
-  vec = proj₂
-
-  s : E → Σ _ (Vec T) 
+  --input of the edge (s for source)
+  s : E → List T
   s = proj₁         ∘ o
-  
-  t : E → Σ _ (Vec T)
+
+  --output of the edge (t for target)
+  t : E → List T
   t = proj₁ ∘ proj₂ ∘ o
 
   in-index  = (Fin (len output)) ⊎ (Σ E (Fin ∘ len ∘ s))
   out-index = (Fin (len input))  ⊎ (Σ E (Fin ∘ len ∘ t))
 
   in-lookup  : in-index  → T
-  in-lookup  = [ lookup (vec output) , (λ {(e , i) → lookup (vec (s e)) i})]′
+  in-lookup  = [ lookup (vec-of-list output) , (λ {(e , i) → lookup (vec-of-list (s e)) i})]′
 
   out-lookup : out-index → T
-  out-lookup = [ lookup (vec input)  , (λ {(e , i) → lookup (vec (t e)) i})]′
+  out-lookup = [ lookup (vec-of-list input)  , (λ {(e , i) → lookup (vec-of-list (t e)) i})]′
 
   field
     conns→ : out-index → in-index
@@ -78,7 +84,8 @@ record Hypergraph {l : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : S
   one-to-one₁ = proj₁ one-to-one
   one-to-one₂ = proj₂ one-to-one
 
-_⊚_ : ∀ {l₁ l₂} {A B C : Σ _ (Vec T)} → Hypergraph {l₁} B C → Hypergraph {l₂} A B → Hypergraph {l₁ ⊔ l₂} A C
+--hypergraph composition
+_⊚_ : ∀ {l₁ l₂} {A B C : List T} → Hypergraph {l₁} B C → Hypergraph {l₂} A B → Hypergraph {l₁ ⊔ l₂} A C
 _⊚_ {_} {_} {na , A} {nb , B} {nc , C} BC AB = record
                                   { E = E
                                   ; o = o
@@ -325,7 +332,8 @@ _⊚_ {_} {_} {na , A} {nb , B} {nc , C} BC AB = record
                                   one-to-one : _
                                   one-to-one = one-to-one₁ , one-to-one₂
 
-record _≋_ {l} {A B : Σ _ (Vec T)} (G H : Hypergraph {l} A B) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
+--hypergraph equivalence
+record _≋_ {l} {A B : List T} (G H : Hypergraph {l} A B) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
   module G = Hypergraph G
   module H = Hypergraph H
   field
@@ -349,7 +357,7 @@ record _≋_ {l} {A B : Σ _ (Vec T)} (G H : Hypergraph {l} A B) : Set ((lsuc l)
 
 
 assoc : {l : Level}
-        {A B C D : Σ _ (Vec T)} {f : Hypergraph {l} A B}
+        {A B C D : List T} {f : Hypergraph {l} A B}
         {g : Hypergraph {l} B C} {h : Hypergraph {l} C D} →
         ((h ⊚ g) ⊚ f) ≋ (h ⊚ (g ⊚ f))
 assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
@@ -445,7 +453,7 @@ assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
                   _ ∎
                 conns→-resp (inj₂ ((inj₂ (inj₂ e′)) , i)) | (inj₂ (e , j)) | [ i→j ] = {!!}
 
--- record SimpleHypergraph {ℓᵣ : Level} (input : Σ _ (Vec T)) (output : Σ _ (Vec T)) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
+-- record SimpleHypergraph {ℓᵣ : Level} (input : List T) (output : List T) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
 --   field
 --     hg : Hypergraph input output
 
@@ -461,7 +469,7 @@ assoc {_} {A} {B} {C} {D} {f} {g} {h} = record
 
 Hypergraph-Category : Category _ _ _
 Hypergraph-Category = record
-                        { Obj = Σ _ (Vec T)
+                        { Obj = List T
                         ; _⇒_ = Hypergraph
                         ; _≈_ = _≋_
                         ; id = record
