@@ -9,7 +9,6 @@ open import Data.Empty.Polymorphic
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Function using (_∘_ ; Inverseᵇ ; id)
-open import Categories.Category
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
 module Nets.Hypergraph {ℓₜ ℓₜᵣ : Level} (Types-setoid : Setoid ℓₜ ℓₜᵣ)
@@ -33,8 +32,7 @@ vec-of-list = proj₂
 module T = Setoid Types-setoid
 T = T.Carrier
 
-module Obj {input : _} {output : _} where
-  open Setoid (Obj-setoid input output) public
+module Obj {input : _} {output : _} = Setoid (Obj-setoid input output)
 Obj = Obj.Carrier
 
 
@@ -148,216 +146,213 @@ _⊚_ BC AB = record
 
     --properties
     type-match : _
-    type-match = {!!}
-    one-to-one = {!!}
---                                   type-match : _
---                                   type-match = type-match′
---                                     where
---                                       open SetoidReasoning Types-setoid
---                                       type-match′ : _
---                                       type-match′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
---                                       type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
---                                       type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
---                                         _ ≈⟨ AB.type-match (inj₁ i) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ≈⟨ BC.type-match (inj₁ j) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
---                                         _ ∎
---                                       type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
---                                         _ ≈⟨ AB.type-match (inj₁ i) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ≈⟨ BC.type-match (inj₁ j) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
---                                         _ ∎
---                                       type-match′ (inj₁ i) | (inj₂ _) | [ i→j ] = begin
---                                         _ ≈⟨ AB.type-match (inj₁ i) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ∎
---                                       type-match′ (inj₂ ((inj₁ e) , i)) with (AB.conns→ (inj₂ (e , i))) | (inspect AB.conns→ (inj₂ (e , i)))
---                                       type-match′ (inj₂ ((inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
---                                       type-match′ (inj₂ ((inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
---                                         _ ≈⟨ AB.type-match (inj₂ (e , i)) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ≈⟨ BC.type-match (inj₁ j) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
---                                         _ ∎
---                                       type-match′ (inj₂ ((inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
---                                         _ ≈⟨ AB.type-match (inj₂ (e , i)) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ≈⟨ BC.type-match (inj₁ j) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
---                                         _ ∎
---                                       type-match′ (inj₂ ((inj₁ e) , i)) | (inj₂ _) | [ i→j ] = begin
---                                         _ ≈⟨ AB.type-match (inj₂ (e , i)) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ∎
---                                       type-match′ (inj₂ ((inj₂ e) , i)) with (BC.conns→ (inj₂ (e , i))) | (inspect BC.conns→ (inj₂ (e , i)))
---                                       type-match′ (inj₂ ((inj₂ e) , i)) | (inj₁ _) | [ i→j ] = begin
---                                         _ ≈⟨ BC.type-match (inj₂ (e , i)) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ∎
---                                       type-match′ (inj₂ ((inj₂ e) , i)) | (inj₂ _) | [ i→j ] = begin
---                                         _ ≈⟨ BC.type-match (inj₂ (e , i)) ⟩
---                                         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
---                                         _ ∎
---                                   one-to-one₁ : _
---                                   one-to-one₁ = one-to-one₁′
---                                     where
---                                       open ≡-Reasoning
---                                       one-to-one₁′ : _
---                                       one-to-one₁′ (inj₁ i) with (BC.conns← (inj₁ i)) | (inspect BC.conns← (inj₁ i))
---                                       one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
---                                       one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
---                                           _ ∎))
---                                       one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
---                                           _ ∎))
---                                       one-to-one₁′ (inj₁ i) | (inj₂ _) | [ i→j ] =
---                                         cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
---                                           _ ∎)
---                                       one-to-one₁′ (inj₂ (inj₁ e , i)) with (AB.conns← (inj₂ (e , i))) | (inspect AB.conns← (inj₂ (e , i)))
---                                       one-to-one₁′ (inj₂ (inj₁ e , i)) | (inj₁ _) | [ i→j ] =
---                                         cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                       one-to-one₁′ (inj₂ (inj₁ e , i)) | (inj₂ _) | [ i→j ] =
---                                         cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                       one-to-one₁′ (inj₂ (inj₂ e , i)) with (BC.conns← (inj₂ (e , i))) | (inspect BC.conns← (inj₂ (e , i)))
---                                       one-to-one₁′ (inj₂ (inj₂ e , i)) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
---                                       one-to-one₁′ (inj₂ (inj₂ e , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₂ (e , i)) ⟩
---                                           _ ∎))
---                                       one-to-one₁′ (inj₂ (inj₂ e , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
---                                           _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₂ (e , i)) ⟩
---                                           _ ∎))
---                                       one-to-one₁′ (inj₂ (inj₂ e , i)) | (inj₂ _) | [ i→j ] =
---                                         cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₁ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                   one-to-one₂ : _
---                                   one-to-one₂ = one-to-one₂′
---                                     where
---                                       open ≡-Reasoning
---                                       one-to-one₂′ : _
---                                       one-to-one₂′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
---                                       one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
---                                       one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym j→k) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
---                                           _ ∎))
---                                       one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym j→k) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
---                                           _ ∎))
---                                       one-to-one₂′ (inj₁ i) | (inj₂ _) | [ i→j ] =
---                                         cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
---                                           _ ∎)
---                                       one-to-one₂′ (inj₂ (inj₁ e , i)) with (AB.conns→ (inj₂ (e , i))) | (inspect AB.conns→ (inj₂ (e , i)))
---                                       one-to-one₂′ (inj₂ (inj₁ e , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
---                                       one-to-one₂′ (inj₂ (inj₁ e , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym j→k) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₂ (e , i)) ⟩
---                                           _ ∎))
---                                       one-to-one₂′ (inj₂ (inj₁ e , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
---                                         (cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym j→k) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
---                                           _ ∎))
---                                         (cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₂ (e , i)) ⟩
---                                           _ ∎))
---                                       one-to-one₂′ (inj₂ (inj₁ e , i)) | (inj₂ _) | [ i→j ] =
---                                         cong (Sum.map₂ _)
---                                           (begin
---                                           _ ≡⟨ cong AB.conns← (sym i→j) ⟩
---                                           _ ≡⟨ AB.one-to-one₂ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                       one-to-one₂′ (inj₂ (inj₂ e , i)) with (BC.conns→ (inj₂ (e , i))) | (inspect BC.conns→ (inj₂ (e , i)))
---                                       one-to-one₂′ (inj₂ (inj₂ e , i)) | (inj₁ _) | [ i→j ] =
---                                         cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                       one-to-one₂′ (inj₂ (inj₂ e , i)) | (inj₂ _) | [ i→j ] =
---                                         cong [ _ , _ ]′
---                                           (begin
---                                           _ ≡⟨ cong BC.conns← (sym i→j) ⟩
---                                           _ ≡⟨ BC.one-to-one₂ (inj₂ (e , i)) ⟩
---                                           _ ∎)
---                                   one-to-one : _
---                                   one-to-one = one-to-one₁ , one-to-one₂
+    type-match = type-match′
+      where
+        open SetoidReasoning Types-setoid
+        type-match′ : _
+        type-match′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
+        type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+        type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+          _ ≈⟨ AB.type-match (inj₁ i) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ≈⟨ BC.type-match (inj₁ j) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+          _ ∎
+        type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+          _ ≈⟨ AB.type-match (inj₁ i) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ≈⟨ BC.type-match (inj₁ j) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+          _ ∎
+        type-match′ (inj₁ i) | (inj₂ _) | [ i→j ] = begin
+          _ ≈⟨ AB.type-match (inj₁ i) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ∎
+        type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
+        type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+        type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+          _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ≈⟨ BC.type-match (inj₁ j) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+          _ ∎
+        type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+          _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ≈⟨ BC.type-match (inj₁ j) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
+          _ ∎
+        type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = begin
+          _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ∎
+        type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns→ (inj₂ ((_ , _ , e) , i)))
+        type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] = begin
+          _ ≈⟨ BC.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ∎
+        type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = begin
+          _ ≈⟨ BC.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+          _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
+          _ ∎
+    one-to-one₁ : _
+    one-to-one₁ = one-to-one₁′
+      where
+        open ≡-Reasoning
+        one-to-one₁′ : _
+        one-to-one₁′ (inj₁ i) with (BC.conns← (inj₁ i)) | (inspect BC.conns← (inj₁ i))
+        one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
+        one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
+            _ ∎))
+        one-to-one₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
+            _ ∎))
+        one-to-one₁′ (inj₁ i) | (inj₂ _) | [ i→j ] =
+          cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₁ i) ⟩
+            _ ∎)
+        one-to-one₁′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns← (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns← (inj₂ ((_ , _ , e) , i)))
+        one-to-one₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ _) | [ i→j ] =
+          cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+        one-to-one₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] =
+          cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+        one-to-one₁′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns← (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns← (inj₂ ((_ , _ , e) , i)))
+        one-to-one₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
+        one-to-one₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎))
+        one-to-one₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
+            _ ≡⟨ AB.one-to-one₁ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎))
+        one-to-one₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] =
+          cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₁ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+    one-to-one₂ : _
+    one-to-one₂ = one-to-one₂′
+      where
+        open ≡-Reasoning
+        one-to-one₂′ : _
+        one-to-one₂′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
+        one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+        one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym j→k) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
+            _ ∎))
+        one-to-one₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym j→k) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
+            _ ∎))
+        one-to-one₂′ (inj₁ i) | (inj₂ _) | [ i→j ] =
+          cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₁ i) ⟩
+            _ ∎)
+        one-to-one₂′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
+        one-to-one₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+        one-to-one₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym j→k) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎))
+        one-to-one₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
+          (cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym j→k) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₁ j) ⟩
+            _ ∎))
+          (cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎))
+        one-to-one₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] =
+          cong (Sum.map₂ _)
+            (begin
+            _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+            _ ≡⟨ AB.one-to-one₂ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+        one-to-one₂′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns→ (inj₂ ((_ , _ , e) , i)))
+        one-to-one₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] =
+          cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+        one-to-one₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] =
+          cong [ _ , _ ]′
+            (begin
+            _ ≡⟨ cong BC.conns← (sym i→j) ⟩
+            _ ≡⟨ BC.one-to-one₂ (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ∎)
+    one-to-one : _
+    one-to-one = one-to-one₁ , one-to-one₂
 
 --hypergraph equivalence
 record _≋_ {l} {A B : List T} (G H : Hypergraph {l} A B) : Set (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ) where
@@ -383,77 +378,7 @@ record _≋_ {l} {A B : List T} (G H : Hypergraph {l} A B) : Set (l ⊔ ℓₜ �
     --                H.conns← (α-in-index i) ≡ α-out-index (G.conns← i)
 
 
-⊚-assoc : {l : Level}
-          {A B C D : List T} {f : Hypergraph {l} A B}
-          {g : Hypergraph {l} B C} {h : Hypergraph {l} C D} →
-          ((h ⊚ g) ⊚ f) ≋ (h ⊚ (g ⊚ f))
-⊚-assoc {f = f} {g} {h} = record
-  { α = λ
-    { (inj₁ x)        → inj₁ (inj₁ x)
-    ; (inj₂ (inj₁ x)) → inj₁ (inj₂ x)
-    ; (inj₂ (inj₂ x)) → inj₂ x
-    }
-  ; α′ = λ
-    { (inj₁ (inj₁ x)) → inj₁ x
-    ; (inj₁ (inj₂ x)) → inj₂ (inj₁ x)
-    ; (inj₂ x)        → inj₂ (inj₂ x)
-    }
-  ; one-to-one = (λ
-      { (inj₁ (inj₁ x)) → refl
-      ; (inj₁ (inj₂ x)) → refl
-      ; (inj₂ x)        → refl
-      }
-    ) , (λ
-      { (inj₁ x)        → refl
-      ; (inj₂ (inj₁ x)) → refl
-      ; (inj₂ (inj₂ x)) → refl
-      }
-    )
-  ; obj-resp = λ
-    { (inj₁ x)        → Obj.refl
-    ; (inj₂ (inj₁ x)) → Obj.refl
-    ; (inj₂ (inj₂ x)) → Obj.refl
-    }
-  ; conns→-resp = conns→-resp
-  }
-  where
-    module f = Hypergraph f
-    module g = Hypergraph g
-    module h = Hypergraph h
-    conns→-resp : _
-    conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
-    conns→-resp (inj₁ i)    | (inj₁ j) with (g.conns→ (inj₁ j))
-    conns→-resp (inj₁ i)    | (inj₁ j)    | (inj₁ k) with (h.conns→ (inj₁ k))
-    conns→-resp (inj₁ i)    | (inj₁ j)    | (inj₁ k)    | (inj₁ _) = refl
-    conns→-resp (inj₁ i)    | (inj₁ j)    | (inj₁ k)    | (inj₂ _) = refl
-    conns→-resp (inj₁ i)    | (inj₁ j)    | (inj₂ _)               = refl
-    conns→-resp (inj₁ i)    | (inj₂ _)                             = refl
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i)) with (f.conns→ (inj₂ ((_ , _ , e) , i)))
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) with (g.conns→ (inj₁ j))
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j)    | (inj₁ k) with (h.conns→ (inj₁ k))
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j)    | (inj₁ k)    | (inj₁ _) = refl
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j)    | (inj₁ k)    | (inj₂ _) = refl
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j)    | (inj₂ _)               = refl
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ _)                             = refl
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i)) with (g.conns→ (inj₂ ((_ , _ , e) , i)))
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j) with (h.conns→ (inj₁ j))
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₁ _) = refl
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₂ _) = refl
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₂ _)               = refl
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i)) with (h.conns→ (inj₂ ((_ , _ , e) , i)))
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i))    | (inj₁ _) = refl
-    conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i))    | (inj₂ _) = refl
 
-⊚-id : ∀ {l} {A} → Hypergraph {l} A A
-⊚-id = record
-  { E = λ _ _ → ⊥
-  ; conns→ = λ {(inj₁ x) → inj₁ x}
-  ; conns← = λ {(inj₁ x) → inj₁ x}
-  ; type-match = λ {(inj₁ _) → T.refl}
-  ; one-to-one = (λ {(inj₁ _) → refl}) ,
-                 (λ {(inj₁ _) → refl})
-  ; o = λ ()
-  }
 
 -- record SimpleHypergraph {ℓᵣ : Level} (input : List T) (output : List T) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
 --   field
@@ -469,17 +394,6 @@ record _≋_ {l} {A B : List T} (G H : Hypergraph {l} A B) : Set (l ⊔ ℓₜ �
 --     conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (E-outputs at (fsuc i)))) →
 --                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≢_))
 
-Hypergraph-Category : ∀ {l} → Category ℓₜ ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ)
-Hypergraph-Category {l} = record
-  { Obj = List T
-  ; _⇒_ = Hypergraph {l}
-  ; _≈_ = _≋_
-  ; id = ⊚-id
-  ; _∘_ = _⊚_
-  ; assoc = ⊚-assoc
-  ; sym-assoc = {!!}
-  ; identityˡ = {!!}
-  ; identityʳ = {!!}
-  ; equiv = {!!}
-  ; ∘-resp-≈ = {!!}
-  }
+
+
+
