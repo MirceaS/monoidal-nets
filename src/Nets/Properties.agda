@@ -5,7 +5,9 @@ open import Data.Sum as Sum using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
 open import Data.Nat hiding (_⊔_)
 open import Data.Vec hiding (splitAt)
 open import Data.Fin renaming (zero to fzero ; suc to fsuc)
-open import Data.Empty.Polymorphic
+open import Data.Fin.Properties using (¬Fin0)
+open import Data.Empty using (⊥-elim)
+open import Data.Empty.Polymorphic hiding (⊥-elim)
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Function using (_∘_ ; Inverseᵇ ; id)
@@ -134,15 +136,15 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
         module fg = _≋_ f≋g
         bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (fg.α′ {input} {output}) (fg.α)
         bijection {input} {output} = Prod.swap (fg.bijection {input} {output})
-        obj-resp : ∀ {input output} → (e : fg.H.E input output) → fg.H.o e ELabel.≈ fg.G.o (fg.α′ e)
+        obj-resp : ∀ {input output} → (e : fg.RHS.E input output) → fg.RHS.o e ELabel.≈ fg.LHS.o (fg.α′ e)
         obj-resp {input} {output} e = begin
-          _ ≡˘⟨ cong fg.H.o (proj₁ fg.bijection e) ⟩
+          _ ≡˘⟨ cong fg.RHS.o (proj₁ fg.bijection e) ⟩
           _ ≈˘⟨ fg.obj-resp (fg.α′ e) ⟩
           _ ∎
           where open SetoidReasoning (ELabel-setoid input output)
         conns→-resp : _
-        conns→-resp (inj₁ i) with (fg.G.conns→ (inj₁ i))
-                         | (inspect fg.G.conns→ (inj₁ i))
+        conns→-resp (inj₁ i) with (fg.LHS.conns→ (inj₁ i))
+                         | (inspect fg.LHS.conns→ (inj₁ i))
         conns→-resp (inj₁ i)    | (inj₁ j) | [ gj ] = begin
           _ ≡˘⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) gj ⟩
           _ ≡˘⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₁ i)) ⟩
@@ -154,19 +156,19 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
           _ ≡˘⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₁ i)) ⟩
           _ ∎
           where open ≡-Reasoning
-        conns→-resp (inj₂ ((_ , _ , e) , i)) with (fg.G.conns→ (inj₂ ((_ , _ , fg.α′ e) , i)))
-                                         | (inspect fg.G.conns→ (inj₂ ((_ , _ , fg.α′ e) , i)))
+        conns→-resp (inj₂ ((_ , _ , e) , i)) with (fg.LHS.conns→ (inj₂ ((_ , _ , fg.α′ e) , i)))
+                                         | (inspect fg.LHS.conns→ (inj₂ ((_ , _ , fg.α′ e) , i)))
         conns→-resp (inj₂ ((_ , _ , e) , i))    | (inj₁ j) | [ gj ] = begin
           _ ≡˘⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) gj ⟩
           _ ≡˘⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₂ ((_ , _ , fg.α′ e) , i))) ⟩
-          _ ≡⟨ cong (λ x → Sum.map₂ _ (fg.H.conns→ (inj₂ ((_ , _ , x) , i)))) (proj₁ fg.bijection e) ⟩
+          _ ≡⟨ cong (λ x → Sum.map₂ _ (fg.RHS.conns→ (inj₂ ((_ , _ , x) , i)))) (proj₁ fg.bijection e) ⟩
           _ ∎
           where open ≡-Reasoning
         conns→-resp (inj₂ ((_ , _ , e) , i))    | (inj₂ ((_ , _ , e′) , j)) | [ gj ] = begin
           _ ≡˘⟨ cong (λ x → inj₂ ((_ , _ , x) , j)) (proj₂ fg.bijection e′) ⟩
           _ ≡˘⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) gj ⟩
           _ ≡˘⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₂ ((_ , _ , fg.α′ e) , i))) ⟩
-          _ ≡⟨ cong (λ x → Sum.map₂ _ (fg.H.conns→ (inj₂ ((_ , _ , x) , i)))) (proj₁ fg.bijection e) ⟩
+          _ ≡⟨ cong (λ x → Sum.map₂ _ (fg.RHS.conns→ (inj₂ ((_ , _ , x) , i)))) (proj₁ fg.bijection e) ⟩
           _ ∎
           where open ≡-Reasoning
     ≋-trans : Transitive _≋_
@@ -184,11 +186,11 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
         bijection {input} {output} =
           (λ x → trans (cong gh.α (proj₁ fg.bijection (gh.α′ x))) (proj₁ gh.bijection x)) ,
           (λ x → trans (cong fg.α′ (proj₂ gh.bijection (fg.α x))) (proj₂ fg.bijection x))
-        obj-resp : ∀ {input output} → (e : fg.G.E input output) → fg.G.o e ELabel.≈ gh.H.o (gh.α (fg.α e))
+        obj-resp : ∀ {input output} → (e : fg.LHS.E input output) → fg.LHS.o e ELabel.≈ gh.RHS.o (gh.α (fg.α e))
         obj-resp {input} {output} e = ELabel.trans (fg.obj-resp e) (gh.obj-resp (fg.α e))
         conns→-resp : _
-        conns→-resp (inj₁ i) with (fg.G.conns→ (inj₁ i))
-                         | (inspect fg.G.conns→ (inj₁ i))
+        conns→-resp (inj₁ i) with (fg.LHS.conns→ (inj₁ i))
+                         | (inspect fg.LHS.conns→ (inj₁ i))
         conns→-resp (inj₁ i)    | (inj₁ _) | [ gj ] = begin
           _ ≡⟨ gh.conns→-resp (inj₁ i) ⟩
           _ ≡⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₁ i)) ⟩
@@ -201,8 +203,8 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
           _ ≡⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) gj ⟩
           _ ∎
           where open ≡-Reasoning
-        conns→-resp (inj₂ ((_ , _ , e) , i)) with (fg.G.conns→ (inj₂ ((_ , _ , e) , i)))
-                                         | (inspect fg.G.conns→ (inj₂ ((_ , _ , e) , i)))
+        conns→-resp (inj₂ ((_ , _ , e) , i)) with (fg.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
+                                         | (inspect fg.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
         conns→-resp (inj₂ ((_ , _ , e) , i))    | (inj₁ _) | [ gj ] = begin
           _ ≡⟨ gh.conns→-resp (inj₂ ((_ , _ , fg.α e) , i)) ⟩
           _ ≡⟨ cong (Sum.map₂ _) (fg.conns→-resp (inj₂ ((_ , _ , e) , i))) ⟩
@@ -273,8 +275,8 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
     module gi = _≋_ g≋i
     open ≡-Reasoning
     conns→-resp : _
-    conns→-resp (inj₁ i) with (gi.G.conns→ (inj₁ i)) | (inspect gi.G.conns→ (inj₁ i))
-    conns→-resp (inj₁ i)    | (inj₁ j) | [ i→j ] with (fh.G.conns→ (inj₁ j)) | (inspect fh.G.conns→ (inj₁ j))
+    conns→-resp (inj₁ i) with (gi.LHS.conns→ (inj₁ i)) | (inspect gi.LHS.conns→ (inj₁ i))
+    conns→-resp (inj₁ i)    | (inj₁ j) | [ i→j ] with (fh.LHS.conns→ (inj₁ j)) | (inspect fh.LHS.conns→ (inj₁ j))
     conns→-resp (inj₁ i)    | (inj₁ j) | [ i→j ]    | (inj₁ _) | [ j→k ] = begin
       _ ≡⟨ cong [ _ , _ ]′ (gi.conns→-resp (inj₁ i)) ⟩
       _ ≡⟨ cong ([ _ , _ ]′ ∘ (Sum.map₂ _)) i→j ⟩
@@ -291,9 +293,9 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
       _ ≡⟨ cong [ _ , _ ]′ (gi.conns→-resp (inj₁ i)) ⟩
       _ ≡⟨ cong ([ _ , _ ]′ ∘ (Sum.map₂ _)) i→j ⟩
       _ ∎
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i)) with (gi.G.conns→ (inj₂ ((_ , _ , e) , i)))
-                                          | (inspect gi.G.conns→ (inj₂ ((_ , _ , e) , i)))
-    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i→j ] with (fh.G.conns→ (inj₁ j)) | (inspect fh.G.conns→ (inj₁ j))
+    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i)) with (gi.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
+                                          | (inspect gi.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
+    conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i→j ] with (fh.LHS.conns→ (inj₁ j)) | (inspect fh.LHS.conns→ (inj₁ j))
     conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i→j ]    | (inj₁ _) | [ j→k ] = begin
       _ ≡⟨ cong [ _ , _ ]′ (gi.conns→-resp (inj₂ ((_ , _ , e) , i))) ⟩
       _ ≡⟨ cong ([ _ , _ ]′ ∘ (Sum.map₂ _)) i→j ⟩
@@ -310,8 +312,8 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
       _ ≡⟨ cong [ _ , _ ]′ (gi.conns→-resp (inj₂ ((_ , _ , e) , i))) ⟩
       _ ≡⟨ cong ([ _ , _ ]′ ∘ (Sum.map₂ _)) i→j ⟩
       _ ∎
-    conns→-resp (inj₂ ((_ , _ , inj₂ e) , i)) with (fh.G.conns→ (inj₂ ((_ , _ , e) , i)))
-                                          | (inspect fh.G.conns→ (inj₂ ((_ , _ , e) , i)))
+    conns→-resp (inj₂ ((_ , _ , inj₂ e) , i)) with (fh.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
+                                          | (inspect fh.LHS.conns→ (inj₂ ((_ , _ , e) , i)))
     conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ _) | [ i→j ] = begin
       _ ≡⟨ cong (Sum.map₂ _) (fh.conns→-resp (inj₂ ((_ , _ , e) , i))) ⟩
       _ ≡⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) i→j ⟩
@@ -323,19 +325,32 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
 
 
 
+-- the unit of the tensor product
+empty : Hypergraph {lzero} (zero , []) (zero , [])
+empty = record
+  { E          =  λ _ _ → ⊥
+  ; conns→    =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
+  ; conns←    =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
+  ; type-match =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
+  ; bijection  = (λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}) ,
+                 (λ {(inj₁ x) → ⊥-elim (¬Fin0 x)})
+  ; o          =  λ ()
+  }
+
+
 Hypergraph-Category : ∀ {l} → Category ℓₜ ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ)
 Hypergraph-Category {l} = record
-  { Obj = List VLabel
-  ; _⇒_ = Hypergraph {l}
-  ; _≈_ = _≋_
-  ; id = ⊚-id
-  ; _∘_ = _⊚_
-  ; assoc = ⊚-assoc
+  { Obj       = List VLabel
+  ; _⇒_      = Hypergraph {l}
+  ; _≈_       = _≋_
+  ; id        = ⊚-id
+  ; _∘_       = _⊚_
+  ; assoc     = ⊚-assoc
   ; sym-assoc = ≋-equiv.sym ⊚-assoc
-  ; identityˡ = ⊚-identityˡ
-  ; identityʳ = ⊚-identityʳ
-  ; equiv = ≋-equiv
-  ; ∘-resp-≈ = ⊚-resp-≋
+  ; identityˡ  = ⊚-identityˡ
+  ; identityʳ  = ⊚-identityʳ
+  ; equiv     = ≋-equiv
+  ; ∘-resp-≈  = ⊚-resp-≋
   }
   where
     module ≋-equiv {A} {B} = IsEquivalence (≋-equiv {l} {A} {B})

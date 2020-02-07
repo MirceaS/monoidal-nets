@@ -1,6 +1,6 @@
 open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
-open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂)
+open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂ ; ∃)
 open import Data.Sum as Sum using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
 open import Data.Nat hiding (_⊔_)
 open import Data.Vec hiding (splitAt)
@@ -87,30 +87,28 @@ record Hypergraph {l : Level} (input : List VLabel) (output : List VLabel) : Set
     o : ∀ {input output} → E input output → ELabel {input} {output}
 
 
-
-
 --hypergraph equivalence
-record _≋_ {l} {A B : List VLabel} (G H : Hypergraph {l} A B) : Set (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ) where
-  module G = Hypergraph G
-  module H = Hypergraph H
+record _≋_ {l} {A B : List VLabel} (LHS RHS : Hypergraph {l} A B) : Set (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ) where
+  module LHS = Hypergraph LHS
+  module RHS = Hypergraph RHS
   field
-    α : ∀ {input output} → G.E input output → H.E input output
-    α′ : ∀ {input output} → H.E input output → G.E input output
+    α : ∀ {input output} → LHS.E input output → RHS.E input output
+    α′ : ∀ {input output} → RHS.E input output → LHS.E input output
 
     bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (α {input} {output}) (α′)  -- TODO again, maybe change this to some new edge equality?
-    obj-resp : ∀ {input output} → (e : G.E input output) → (G.o e) ELabel.≈ (H.o (α e))
+    obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
 
-  α-in-index :  G.in-index  → H.in-index
+  α-in-index :  LHS.in-index  → RHS.in-index
   α-in-index  = Sum.map₂ (Prod.map (λ {(_ , _ , e) → _ , _ , α e}) id)
-  α-out-index : G.out-index → H.out-index
+  α-out-index : LHS.out-index → RHS.out-index
   α-out-index = Sum.map₂ (Prod.map (λ {(_ , _ , e) → _ , _ , α e}) id)
 
   field
-    conns→-resp : (i : G.out-index) →
-                   H.conns→ (α-out-index i) ≡ α-in-index (G.conns→ i)  -- TODO again, maybe change this to some new edge equality?
+    conns→-resp : (i : LHS.out-index) →
+                   RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)  -- TODO again, maybe change this to some new edge equality?
     -- this one is redundant
-    -- conns←-resp : {i : G.in-index} →
-    --                H.conns← (α-in-index i) ≡ α-out-index (G.conns← i)
+    -- conns←-resp : {i : LHS.in-index} →
+    --                RHS.conns← (α-in-index i) ≡ α-out-index (LHS.conns← i)
 
 
 
@@ -591,20 +589,17 @@ _⨂_ {_} {A} {B} {C} {D} AB CD = record
           _ ∎
           where open ≡-Reasoning
 
--- record SimpleHypergraph {ℓᵣ : Level} (input : List VLabel) (output : List VLabel) : Set (ℓₜ ⊔ ℓₜᵣ ⊔ (lsuc ℓᵣ) ⊔ (lsuc ℓₒ)) where
---   field
---     hg : Hypergraph input output
 
---   open Hypergraph hg public
+record SimpleHypergraph {l} (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
+  field
+    hypergraph : Hypergraph {l} input output
 
---   field
---     _≲_ : Rel (Fin E-size) ℓᵣ
---     partial_order : IsPartialOrder _≡_ _≲_
---     conns-resp-≲     : (i : Fin E-size) → (j : Fin (proj₁ (E-outputs at (fsuc i)))) →
---                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≲_))
---     conns-resp-≲-neq : (i : Fin E-size) → (j : Fin (proj₁ (E-outputs at (fsuc i)))) →
---                        (Fin-pm (proj₁ (conns→ ((fsuc i) , j))) ⊤' (i ≢_))
+  open Hypergraph hypergraph public
 
+  _≲_ : Rel Edge _
+  e₁ ≲ e₂ = ∃ λ i₁ → ∃ λ i₂ → conns→ (inj₂ (e₁ , i₁)) ≡ inj₂ (e₂ , i₂)
 
+  field
+    partial-order : IsPartialOrder _≡_ _≲_
 
-
+  module edge-order = IsPartialOrder partial-order
