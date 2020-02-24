@@ -404,15 +404,15 @@ _⨂_ {_} {A} {B} {C} {D} AB CD = record
     E : _
     E input output = (AB.E input output) ⊎ (CD.E input output)
     conns→ : _
-    conns→ (inj₁ i) with (splitAt (len A) i)
-    conns→ (inj₁ i)    | (inj₁ i₁)       = Sum.map (inject+ (len D)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns→ (inj₁ i₁))
-    conns→ (inj₁ i)    | (inj₂ i₂)       = Sum.map (raise   (len B)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns→ (inj₁ i₂))
+    conns→ (inj₁ i) = [ ((Sum.map (inject+ (len D)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j})) ∘ AB.conns→ ∘ inj₁)
+                       , ((Sum.map (raise   (len B)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j})) ∘ CD.conns→ ∘ inj₁)
+                       ]′ (splitAt (len A) i)
     conns→ (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len D)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns→ (inj₂ ((_ , _ , e) , i)))
     conns→ (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len B)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns→ (inj₂ ((_ , _ , e) , i)))
     conns← : _
-    conns← (inj₁ i) with (splitAt (len B) i)
-    conns← (inj₁ i)    | (inj₁ i₁)       = Sum.map (inject+ (len C)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns← (inj₁ i₁))
-    conns← (inj₁ i)    | (inj₂ i₂)       = Sum.map (raise   (len A)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns← (inj₁ i₂))
+    conns← (inj₁ i) = [ ((Sum.map (inject+ (len C)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j})) ∘ AB.conns← ∘ inj₁)
+                       , ((Sum.map (raise   (len A)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j})) ∘ CD.conns← ∘ inj₁)
+                       ]′ (splitAt (len B) i)
     conns← (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len C)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns← (inj₂ ((_ , _ , e) , i)))
     conns← (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len A)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns← (inj₂ ((_ , _ , e) , i)))
     type-match : _
