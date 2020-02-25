@@ -16,9 +16,10 @@ import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 open import Categories.Category
 open import Categories.Category.Product
 open import Categories.Category.Monoidal
+open import Categories.Morphism using (Iso)
 
 import Nets.Properties
-import Nets.Hypergraph hiding (_⊚_)
+import Nets.Hypergraph
 
 module Nets.Monoidal {ℓₜ ℓₜᵣ : Level} (VLabel-setoid : Setoid ℓₜ ℓₜᵣ)
                        {ℓₒ ℓₒᵣ : Level}
@@ -31,9 +32,13 @@ module Nets.Monoidal {ℓₜ ℓₜᵣ : Level} (VLabel-setoid : Setoid ℓₜ �
 open Nets.Properties VLabel-setoid ELabel-setoid
 open Nets.Hypergraph VLabel-setoid ELabel-setoid
 
-l++-identityʳ : ∀ {l} {A : Set l} (xs : Σ _ (Vec A)) → xs ≡ xs l++ (zero , [])
+l++-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ≡ X l++ (zero , [])
 l++-identityʳ (zero , []) = refl
 l++-identityʳ ((suc n) , (x ∷ xs)) = cong ((suc zero , x ∷ []) l++_) (l++-identityʳ (n , xs))
+
+l++-assoc : ∀ {a} {A : Set a} (X Y Z : List A) → ((X l++ Y) l++ Z) ≡ (X l++ (Y l++ Z))
+l++-assoc (zero , []) Y Z = refl
+l++-assoc ((suc n) , (x ∷ xs)) Y Z = cong ((suc zero , x ∷ []) l++_) (l++-assoc (n , xs) Y Z)
 
 Hypergraph-Monoidal : ∀ {l} → Monoidal (Hypergraph-Category {l})
 Hypergraph-Monoidal {l} = record
@@ -53,27 +58,30 @@ Hypergraph-Monoidal {l} = record
           (inj₂ ((_ , _ , (inj₁ ())) , _))
       }
     ; homomorphism = λ {X} {Y} {Z} {f} {g} → record {
-        hom {proj₁ X} {proj₂ X} {proj₁ Y} {proj₂ Y}
-            {proj₁ Z} {proj₂ Z} {proj₁ f} {proj₂ f}
-            {proj₁ g} {proj₂ g} }
+        homomorphism {proj₁ X} {proj₂ X} {proj₁ Y} {proj₂ Y}
+                     {proj₁ Z} {proj₂ Z} {proj₁ f} {proj₂ f}
+                     {proj₁ g} {proj₂ g} }
     ; F-resp-≈ = λ {A} {B} {fg₁} {fg₂} f=f,g=g → record {
         F-resp-≈ {proj₁ A}   {proj₁ B}   {proj₂ A}   {proj₂ B}
                  {proj₁ fg₁} {proj₁ fg₂} {proj₂ fg₁} {proj₂ fg₂}
                  f=f,g=g } 
     }
-  ; unit = zero , []
+  ; unit = unit
   ; unitorˡ = record { from = HC.id; to = HC.id ; iso = record
                        { isoˡ = HC.identityˡ {f = HC.id}
                        ; isoʳ = HC.identityˡ {f = HC.id}
                        }
                      }
-  ; unitorʳ = λ {X} → record
-    { from = subst (HC._⇒ X) (l++-identityʳ X) HC.id
-    ; to = subst (X HC.⇒_) (l++-identityʳ X) HC.id
-    ; iso = {!!} -- record { isoˡ = {!unitorʳ-isoˡ!} {- unitorʳ-isoˡ -} ; isoʳ = {!!} }
-    }
-  ; associator = {!!}
-  ; unitorˡ-commute-from = {!!}
+  ; unitorʳ = λ {X} → record { unitorʳ {X} }
+  ; associator = λ {X} {Y} {Z} → record { associator {X} {Y} {Z} }
+  ; unitorˡ-commute-from = record
+      { α = λ {(inj₁ (inj₂ e)) → inj₂ e}
+      ; α′ = λ {(inj₂ e) → inj₁ (inj₂ e)}
+      ; bijection = (λ {(inj₂ e) → refl})
+                  , (λ {(inj₁ (inj₂ e)) → refl})
+      ; obj-resp = λ {(inj₁ (inj₂ e)) → ELabel.refl}
+      ; conns→-resp = λ {(inj₁ i) → {!!} ; (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i)) → {!!}}
+      }
   ; unitorˡ-commute-to = {!!}
   ; unitorʳ-commute-from = {!!}
   ; unitorʳ-commute-to = {!!}
@@ -84,9 +92,9 @@ Hypergraph-Monoidal {l} = record
   }
   where
     module HC = Category (Hypergraph-Category {l})
-    module hom {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
-               {f₁ : Hypergraph {l} X₁ Y₁} {f₂ : Hypergraph {l} X₂ Y₂}
-               {g₁ : Hypergraph {l} Y₁ Z₁} {g₂ : Hypergraph {l} Y₂ Z₂} where
+    module homomorphism {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
+                        {f₁ : Hypergraph {l} X₁ Y₁} {f₂ : Hypergraph {l} X₂ Y₂}
+                        {g₁ : Hypergraph {l} Y₁ Z₁} {g₂ : Hypergraph {l} Y₂ Z₂} where
     
       module LHS = Hypergraph ((g₁ HC.∘ f₁) ⨂ (g₂ HC.∘ f₂))
       module RHS = Hypergraph ((g₁ ⨂ g₂) HC.∘ (f₁ ⨂ f₂))
@@ -137,59 +145,31 @@ Hypergraph-Monoidal {l} = record
                      RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)
       conns→-resp (inj₁ i) with (splitAt (len X₁) i)
       conns→-resp (inj₁ i)    | (inj₁ i₁) with (f₁.conns→ (inj₁ i₁))
-      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j) with (g₁.conns→ (inj₁ j)) | (inspect (g₁.conns→) (inj₁ j))
-      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j)    | (inj₁ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-inject+ (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j)    | (inj₂ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-inject+ (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
+      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j) rewrite (splitAt-inject+ (len Y₁) (len Y₂) j)
+                                                         with (g₁.conns→ (inj₁ j))
+      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j)    | (inj₁ _) = refl
+      conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₁ j)    | (inj₂ _) = refl
       conns→-resp (inj₁ i)    | (inj₁ i₁)    | (inj₂ _) = refl
       conns→-resp (inj₁ i)    | (inj₂ i₂) with (f₂.conns→ (inj₁ i₂))
-      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j) with (g₂.conns→ (inj₁ j)) | (inspect (g₂.conns→) (inj₁ j))
-      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j)    | (inj₁ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-raise (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j)    | (inj₂ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-raise (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
+      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j) rewrite (splitAt-raise (len Y₁) (len Y₂) j)
+                                                         with (g₂.conns→ (inj₁ j))
+      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j)    | (inj₁ _) = refl
+      conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₁ j)    | (inj₂ _) = refl
       conns→-resp (inj₁ i)    | (inj₂ i₂)    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i)) with (f₁.conns→ (inj₂ ((_ , _ , e) , i)))
-      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j) with (g₁.conns→ (inj₁ j)) | (inspect (g₁.conns→) (inj₁ j))
-      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j)    | (inj₁ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-inject+ (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j)    | (inj₂ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-inject+ (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
+      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j) rewrite (splitAt-inject+ (len Y₁) (len Y₂) j)
+                                                                      with (g₁.conns→ (inj₁ j))
+      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j)    | (inj₁ _) = refl
+      conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j)    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i)) with (g₁.conns→ (inj₂ ((_ , _ , e) , i)))
       conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i))    | (inj₁ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i))    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i)) with (f₂.conns→ (inj₂ ((_ , _ , e) , i)))
-      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j) with (g₂.conns→ (inj₁ j)) | (inspect (g₂.conns→) (inj₁ j))
-      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₁ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-raise (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₂ _) | [ j=k ] = begin
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (splitAt-raise (len Y₁) (len Y₂) j) ⟩
-        _ ≡⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) j=k ⟩
-        _ ∎
-        where open ≡-Reasoning
+      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j) rewrite (splitAt-raise (len Y₁) (len Y₂) j)
+                                                                      with (g₂.conns→ (inj₁ j))
+      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₁ _) = refl
+      conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₁ j)    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₂ (inj₁ e)) , i))    | (inj₂ _) = refl
       conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i)) with (g₂.conns→ (inj₂ ((_ , _ , e) , i)))
       conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i))    | (inj₁ _) = refl
@@ -251,5 +231,48 @@ Hypergraph-Monoidal {l} = record
         _ ∎
         where open ≡-Reasoning
 
-    {- unitorʳ-isoˡ : (Hypergraph-Category Category.≈ (Hypergraph-Category Category.∘ subst (λ section → Hypergraph _ section) (l++-identityʳ _) ⊚-id) (subst (λ section → Hypergraph section _) (l++-identityʳ _) ⊚-id)) (Category.id Hypergraph-Category)
-    unitorʳ-isoˡ = HC.Equiv.trans {!!} (HC.identityˡ {f = HC.id}) -}
+    unit = zero , []
+
+    --coerce : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit)
+    --coerce {A} {B} f rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = f
+
+    --coerced : ∀ {A} {B} (f : A HC.⇒ B) → Set _
+    --coerced {A} {B} f rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = f ≋ (f ⨂ (HC.id {unit}))
+
+    --coerced : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit) → Set _
+    --coerced {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = _≋_
+
+    {--⨂id-unit : ∀ {A} {B} (f : A HC.⇒ B) → f ≋ (f ⨂ (HC.id {unit}))
+    -⨂id-unit {A} {B} f rewrite (cong₂ Hypergraph (sym (l++-identityʳ A)) (sym (l++-identityʳ B))) = {!!} -} {- record
+      { α = inj₁
+      ; α′ = λ {(inj₁ e) → e}
+      ; bijection = (λ {(inj₁ e) → refl}) , (λ e → refl)
+      ; obj-resp = {!!}
+      ; conns→-resp = {!!}
+      } -}
+
+    module unitorʳ {X : List VLabel} where
+      from : (X l++ unit) HC.⇒ X
+      from rewrite (sym (l++-identityʳ X)) = HC.id
+
+      to : X HC.⇒ (X l++ unit)
+      to rewrite (sym (l++-identityʳ X)) = HC.id
+
+      iso : Iso (Hypergraph-Category {l}) from to
+      iso rewrite (sym (l++-identityʳ X)) = record
+        { isoˡ = HC.identityˡ {f = HC.id}
+        ; isoʳ = HC.identityˡ {f = HC.id}
+        }
+
+    module associator {X Y Z : List VLabel} where
+      from : ((X l++ Y) l++ Z) HC.⇒ (X l++ (Y l++ Z))
+      from rewrite (sym (l++-assoc X Y Z)) = HC.id
+
+      to : (X l++ (Y l++ Z)) HC.⇒ ((X l++ Y) l++ Z)
+      to rewrite (sym (l++-assoc X Y Z)) = HC.id
+      
+      iso : Iso (Hypergraph-Category {l}) from to
+      iso rewrite (sym (l++-assoc X Y Z)) = record
+        { isoˡ = HC.identityˡ {f = HC.id}
+        ; isoʳ = HC.identityˡ {f = HC.id}
+        }

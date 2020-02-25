@@ -46,8 +46,8 @@ data _hierarchical-≈_ : {s : Σ _ (Vec ⊤)} → {t : Σ _ (Vec ⊤)} → Rel 
 
 hierarchical-setoid : ℕ → Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Setoid (lsuc lzero) (lsuc lzero)
 hierarchical-setoid level s t = record
-  { Carrier = hierarchical level s t
-  ; _≈_ = λ {(lambda g) → λ {(lambda h) → _≋_ (hierarchical-setoid _) g h} ; app → app ≡_}
+  { Carrier = hierarchical (suc level) s t
+  ; _≈_ = λ {(lambda g) → λ {(lambda h) → _≋_ (hierarchical-setoid level) g h} ; app → app ≡_}
   ; isEquivalence = {!!}
   }
   where

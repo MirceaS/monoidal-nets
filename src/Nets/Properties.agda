@@ -329,11 +329,11 @@ open Nets.Hypergraph VLabel-setoid ELabel-setoid
 empty : Hypergraph {lzero} (zero , []) (zero , [])
 empty = record
   { E          =  λ _ _ → ⊥
-  ; conns→    =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
-  ; conns←    =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
-  ; type-match =  λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}
-  ; bijection  = (λ {(inj₁ x) → ⊥-elim (¬Fin0 x)}) ,
-                 (λ {(inj₁ x) → ⊥-elim (¬Fin0 x)})
+  ; conns→    =  λ {(inj₁ ())}
+  ; conns←    =  λ {(inj₁ ())}
+  ; type-match =  λ {(inj₁ ())}
+  ; bijection  = (λ {(inj₁ ())}) ,
+                 (λ {(inj₁ ())})
   ; o          =  λ ()
   }
 
