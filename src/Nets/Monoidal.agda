@@ -2,7 +2,7 @@ open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
 open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂ ; _×_)
 open import Data.Sum as Sum using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
-open import Data.Sum.Properties using ([,]-∘-distr ; [,]-map-commute)
+open import Data.Sum.Properties using ([,]-∘-distr ; [,]-map-commute ; map-commute)
 open import Data.Nat hiding (_⊔_)
 open import Data.Vec hiding (splitAt)
 open import Data.Fin renaming (zero to fzero ; suc to fsuc)
@@ -40,6 +40,10 @@ l++-assoc : ∀ {a} {A : Set a} (X Y Z : List A) → ((X l++ Y) l++ Z) ≡ (X l+
 l++-assoc (zero , []) Y Z = refl
 l++-assoc ((suc n) , (x ∷ xs)) Y Z = cong ((suc zero , x ∷ []) l++_) (l++-assoc (n , xs) Y Z)
 
+map-id : ∀ {a b} {A : Set a} {B : Set b} → (Sum.map (id {a} {A}) (id {b} {B})) ≗ id
+map-id (inj₁ _) = refl
+map-id (inj₂ _) = refl
+
 Hypergraph-Monoidal : ∀ {l} → Monoidal (Hypergraph-Category {l})
 Hypergraph-Monoidal {l} = record
   { ⊗ = record
@@ -74,15 +78,18 @@ Hypergraph-Monoidal {l} = record
                      }
   ; unitorʳ = λ {X} → record { unitorʳ {X} }
   ; associator = λ {X} {Y} {Z} → record { associator {X} {Y} {Z} }
-  ; unitorˡ-commute-from = record
-      { α = λ {(inj₁ (inj₂ e)) → inj₂ e}
-      ; α′ = λ {(inj₂ e) → inj₁ (inj₂ e)}
-      ; bijection = (λ {(inj₂ e) → refl})
-                  , (λ {(inj₁ (inj₂ e)) → refl})
-      ; obj-resp = λ {(inj₁ (inj₂ e)) → ELabel.refl}
-      ; conns→-resp = λ {(inj₁ i) → {!!} ; (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i)) → {!!}}
-      }
-  ; unitorˡ-commute-to = {!!}
+  ; unitorˡ-commute-from = λ {X} {Y} {f} →
+      let open SetoidReasoning (HC.hom-setoid {X} {Y}) in begin
+        _ ≈⟨ HC.identityˡ ⟩
+        _ ≈⟨ id-unit⨂- f ⟩
+        _ ≈˘⟨ HC.identityʳ ⟩
+        _ ∎
+  ; unitorˡ-commute-to = λ {X} {Y} {f} →
+      let open SetoidReasoning (HC.hom-setoid {X} {Y}) in begin
+        _ ≈⟨ HC.identityˡ ⟩
+        _ ≈˘⟨ id-unit⨂- f ⟩
+        _ ≈˘⟨ HC.identityʳ ⟩
+        _ ∎
   ; unitorʳ-commute-from = {!!}
   ; unitorʳ-commute-to = {!!}
   ; assoc-commute-from = {!!}
@@ -91,7 +98,7 @@ Hypergraph-Monoidal {l} = record
   ; pentagon = {!!}
   }
   where
-    module HC = Category (Hypergraph-Category {l})
+    module HC = Hypergraph-Category {l}
     module homomorphism {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
                         {f₁ : Hypergraph {l} X₁ Y₁} {f₂ : Hypergraph {l} X₂ Y₂}
                         {g₁ : Hypergraph {l} Y₁ Z₁} {g₂ : Hypergraph {l} Y₂ Z₂} where
@@ -206,30 +213,26 @@ Hypergraph-Monoidal {l} = record
       conns→-resp : (i : LHS.out-index) →
                      RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)
       conns→-resp (inj₁ i) with (splitAt (len A) i)
-      conns→-resp (inj₁ i)    | (inj₁ _) = begin
+      conns→-resp (inj₁ i)    | (inj₁ _) = let open ≡-Reasoning in begin
         _ ≡⟨ cong [ _ , _ ]′ (ff.conns→-resp _) ⟩
         _ ≡⟨  [,]-map-commute (ff.LHS.conns→ _) ⟩
         _ ≡˘⟨ [,]-map-commute (ff.LHS.conns→ _) ⟩
         _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₁ i)    | (inj₂ _) = begin
+      conns→-resp (inj₁ i)    | (inj₂ _) = let open ≡-Reasoning in begin
         _ ≡⟨ cong [ _ , _ ]′ (gg.conns→-resp _) ⟩
         _ ≡⟨  [,]-map-commute (gg.LHS.conns→ _) ⟩
         _ ≡˘⟨ [,]-map-commute (gg.LHS.conns→ _) ⟩
         _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₂ ((_ , _ , inj₁ e) , i)) = begin
+      conns→-resp (inj₂ ((_ , _ , inj₁ e) , i)) = let open ≡-Reasoning in begin
         _ ≡⟨ cong [ _ , _ ]′ (ff.conns→-resp _) ⟩
         _ ≡⟨  [,]-map-commute (ff.LHS.conns→ _) ⟩
         _ ≡˘⟨ [,]-map-commute (ff.LHS.conns→ _) ⟩
         _ ∎
-        where open ≡-Reasoning
-      conns→-resp (inj₂ ((_ , _ , inj₂ e) , i)) = begin
+      conns→-resp (inj₂ ((_ , _ , inj₂ e) , i)) = let open ≡-Reasoning in begin
         _ ≡⟨ cong [ _ , _ ]′ (gg.conns→-resp _) ⟩
         _ ≡⟨  [,]-map-commute (gg.LHS.conns→ _) ⟩
         _ ≡˘⟨ [,]-map-commute (gg.LHS.conns→ _) ⟩
         _ ∎
-        where open ≡-Reasoning
 
     unit = zero , []
 
@@ -239,17 +242,36 @@ Hypergraph-Monoidal {l} = record
     --coerced : ∀ {A} {B} (f : A HC.⇒ B) → Set _
     --coerced {A} {B} f rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = f ≋ (f ⨂ (HC.id {unit}))
 
-    --coerced : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit) → Set _
-    --coerced {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = _≋_
+    coerced : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit) → Set _
+    coerced {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = _≋_
 
-    {--⨂id-unit : ∀ {A} {B} (f : A HC.⇒ B) → f ≋ (f ⨂ (HC.id {unit}))
-    -⨂id-unit {A} {B} f rewrite (cong₂ Hypergraph (sym (l++-identityʳ A)) (sym (l++-identityʳ B))) = {!!} -} {- record
-      { α = inj₁
-      ; α′ = λ {(inj₁ e) → e}
-      ; bijection = (λ {(inj₁ e) → refl}) , (λ e → refl)
-      ; obj-resp = {!!}
-      ; conns→-resp = {!!}
-      } -}
+    -- coerced : ∀ {A} {B} {A'} {B'} → A ≡ A' → B ≡ B' → A HC.⇒ B → A' HC.⇒ B' → Set _
+    -- coerced {A} {B} {A'} {B'} refl refl = _≋_
+
+    -⨂id-unit : ∀ {A} {B} (f : A HC.⇒ B) → coerced f (f ⨂ (HC.id {unit}))
+    -⨂id-unit {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = {!!}
+
+    id-unit⨂- : ∀ {A} {B} (f : A HC.⇒ B) → (HC.id {unit} ⨂ f) ≋ f
+    id-unit⨂- {A} {B} f = record
+      { α = λ {(inj₂ e) → e}
+      ; α′ = inj₂
+      ; bijection = (λ e → refl)
+                  , (λ {(inj₂ e) → refl})
+      ; obj-resp = λ {(inj₂ e) → ELabel.refl}
+      ; conns→-resp = λ
+          { (inj₁ i) → begin
+              _ ≡˘⟨ map-id (f.conns→ _) ⟩
+              _ ≡˘⟨ map-commute (f.conns→ _) ⟩
+              _ ∎
+          ; (inj₂ ((_ , _ , inj₂ e) , i)) → begin
+              _ ≡˘⟨ map-id (f.conns→ _) ⟩
+              _ ≡˘⟨ map-commute (f.conns→ _) ⟩
+              _ ∎
+          }
+      }
+      where
+        module f = Hypergraph f
+        open ≡-Reasoning
 
     module unitorʳ {X : List VLabel} where
       from : (X l++ unit) HC.⇒ X

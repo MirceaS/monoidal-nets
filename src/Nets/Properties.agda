@@ -354,3 +354,5 @@ Hypergraph-Category {l} = record
   }
   where
     module ≋-equiv {A} {B} = IsEquivalence (≋-equiv {l} {A} {B})
+
+module Hypergraph-Category {l} = Category (Hypergraph-Category {l})

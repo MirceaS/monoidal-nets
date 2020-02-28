@@ -1,6 +1,6 @@
 open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
-open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂ ; ∃)
+open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂ ; ∃ ; _×_)
 open import Data.Sum as Sum using (_⊎_ ; inj₁ ; inj₂ ; [_,_]′)
 open import Data.Nat hiding (_⊔_)
 open import Data.Vec hiding (splitAt)
@@ -8,6 +8,7 @@ open import Data.Vec.Properties using (lookup-splitAt ; lookup-++ˡ ; lookup-++�
 open import Data.Fin renaming (zero to fzero ; suc to fsuc ; _+_ to _f+_)
 open import Data.Fin.Properties using (splitAt-inject+ ; splitAt-raise ; inject+-raise-splitAt)
 open import Data.Empty.Polymorphic
+open import Data.Unit.Polymorphic
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Function using (_∘_ ; Inverseᵇ ; id)
@@ -603,3 +604,28 @@ record SimpleHypergraph {l} (input : List VLabel) (output : List VLabel) : Set (
     partial-order : IsPartialOrder _≡_ _≲_
 
   module edge-order = IsPartialOrder partial-order
+
+-- the singleton hypergraph
+⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Hypergraph {ℓₜ} s t
+⟦_⟧ {s} {t} x = record
+  { E = λ s′ t′ → (s ≡ s′) × (t ≡ t′)
+  ; conns→ = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
+                ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
+                }
+  ; conns← = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
+                ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
+                }
+  ; type-match = λ { (inj₁ i) → VLabel.refl
+                   ; (inj₂ ((_ , _ , refl , refl) , i)) → VLabel.refl
+                   }
+  ; bijection = (λ
+                  { (inj₁ i) → refl
+                  ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                  }
+                ) , (λ
+                  { (inj₁ i) → refl
+                  ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                  }
+                )
+  ; o = λ {(refl , refl) → x}
+  }
