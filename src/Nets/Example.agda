@@ -10,6 +10,8 @@ open import Data.Fin using (Fin)
 open import Data.Fin.Patterns
 open import Data.Empty
 open import Relation.Binary hiding (_⇒_)
+open import Relation.Binary.Construct.Closure.Equivalence using (EqClosure)
+open import Relation.Binary.Construct.Union using (_∪_)
 
 
 import Nets.Hypergraph ≡-setoid as HGBase
@@ -115,11 +117,25 @@ module pop l where
   RHS = liftHG
 
 
-data _~_ : ∀ {l s t} → Rel (HG.Hypergraph l {lzero} s t) (lsuc lzero) where
-  -- maybe do this via a relation union or other construct?
-  -- ≋→~ : ∀ {l s t} → (g h : HG.Hypergraph l {lzero} s t) → HG._≋_ l g h → g ~ h
+data related : ∀ {l s t} → Rel (HG.Hypergraph l {lzero} s t) (lsuc lzero) where
+  ⨂-resp-~ : ∀ {l s₁ t₁ s₂ t₂} → (g₁ h₁ : HG.Hypergraph l {lzero} s₁ t₁) →
+                                   (g₂ h₂ : HG.Hypergraph l {lzero} s₂ t₂) →
+              related g₁ h₁ →
+              related g₂ h₂ →
+              related (HG._⨂_ l g₁ g₂) (HG._⨂_ l h₁ h₂)
+  ∘-resp-~ : ∀ {l x y z} → (g₁ h₁ : HG.Hypergraph l {lzero} y z) →
+                            (g₂ h₂ : HG.Hypergraph l {lzero} x y) →
+             related g₁ h₁ →
+             related g₂ h₂ →
+             related (HC._∘_ l g₁ g₂) (HC._∘_ l h₁ h₂)
+
+  --identities
   pop : ∀ {l} → (h : HG.Hypergraph l {lzero} 2* 1*) →
-           _~_ {suc l} {2*} {1*} (pop.LHS l h) (pop.RHS l h)
+           related {suc l} {2*} {1*} (pop.LHS l h) (pop.RHS l h)
+
+
+_~_ : ∀ {l s t} → Rel (HG.Hypergraph l {lzero} s t) (lsuc lzero)
+_~_ {l} = EqClosure ((HG._≋_ l) ∪ related)
 
 {-
     level' : ℕ

@@ -32,7 +32,7 @@ module Nets.Monoidal {ℓₜ ℓₜᵣ : Level} (VLabel-setoid : Setoid ℓₜ �
 open Nets.Properties VLabel-setoid ELabel-setoid
 open Nets.Hypergraph VLabel-setoid ELabel-setoid
 
-l++-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ≡ X l++ (zero , [])
+l++-identityʳ : ∀ {a} {A : Set a} (X : List A) → X l++ (zero , []) ≡ X
 l++-identityʳ (zero , []) = refl
 l++-identityʳ ((suc n) , (x ∷ xs)) = cong ((suc zero , x ∷ []) l++_) (l++-identityʳ (n , xs))
 
@@ -236,22 +236,17 @@ Hypergraph-Monoidal {l} = record
 
     unit = zero , []
 
-    --coerce : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit)
-    --coerce {A} {B} f rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = f
+    -⨂id-unit : ∀ {A B} → (f : A HC.⇒ B) → (subst₂ HC._⇒_ (l++-identityʳ A) (l++-identityʳ B) (f ⨂ (HC.id {unit}))) ≋ f
+    -⨂id-unit {A} {B} f = record
+      { α = λ {(inj₁ e) → e}
+      ; α′ = inj₁
+      ; bijection = (λ e → refl)
+                  , (λ {(inj₁ e) → refl})
+      ; obj-resp = λ {(inj₁ e) → ELabel.refl}
+      ; conns→-resp = {!!}
+      }
 
-    --coerced : ∀ {A} {B} (f : A HC.⇒ B) → Set _
-    --coerced {A} {B} f rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = f ≋ (f ⨂ (HC.id {unit}))
-
-    coerced : ∀ {A} {B} → A HC.⇒ B → (A l++ unit) HC.⇒ (B l++ unit) → Set _
-    coerced {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = _≋_
-
-    -- coerced : ∀ {A} {B} {A'} {B'} → A ≡ A' → B ≡ B' → A HC.⇒ B → A' HC.⇒ B' → Set _
-    -- coerced {A} {B} {A'} {B'} refl refl = _≋_
-
-    -⨂id-unit : ∀ {A} {B} (f : A HC.⇒ B) → coerced f (f ⨂ (HC.id {unit}))
-    -⨂id-unit {A} {B} rewrite (sym (l++-identityʳ A)) | (sym (l++-identityʳ B)) = {!!}
-
-    id-unit⨂- : ∀ {A} {B} (f : A HC.⇒ B) → (HC.id {unit} ⨂ f) ≋ f
+    id-unit⨂- : ∀ {A B} → (f : A HC.⇒ B) → (HC.id {unit} ⨂ f) ≋ f
     id-unit⨂- {A} {B} f = record
       { α = λ {(inj₂ e) → e}
       ; α′ = inj₂
@@ -275,13 +270,13 @@ Hypergraph-Monoidal {l} = record
 
     module unitorʳ {X : List VLabel} where
       from : (X l++ unit) HC.⇒ X
-      from rewrite (sym (l++-identityʳ X)) = HC.id
+      from rewrite (l++-identityʳ X) = HC.id
 
       to : X HC.⇒ (X l++ unit)
-      to rewrite (sym (l++-identityʳ X)) = HC.id
+      to rewrite (l++-identityʳ X) = HC.id
 
       iso : Iso (Hypergraph-Category {l}) from to
-      iso rewrite (sym (l++-identityʳ X)) = record
+      iso rewrite (l++-identityʳ X) = record
         { isoˡ = HC.identityˡ {f = HC.id}
         ; isoʳ = HC.identityˡ {f = HC.id}
         }
