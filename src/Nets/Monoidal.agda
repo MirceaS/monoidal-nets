@@ -1,3 +1,5 @@
+--{-# OPTIONS --without-K --safe #-}
+
 open import Level renaming (zero to lzero ; suc to lsuc)
 open import Agda.Builtin.Equality
 open import Data.Product as Prod using (Σ ; _,_ ; proj₁ ; proj₂ ; _×_)
@@ -11,11 +13,13 @@ open import Data.Empty using (⊥-elim)
 open import Data.Empty.Polymorphic renaming (⊥-elim to ⊥-elim′)
 open import Relation.Binary hiding (_⇒_)
 open import Relation.Binary.PropositionalEquality
-open import Function using (_∘_ ; Inverseᵇ ; id)
+open import Function using (_∘_ ; Inverseᵇ ; id ; case_of_)
+open import Categories.Functor.Bifunctor using (Bifunctor)
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 open import Categories.Category
 open import Categories.Category.Product
 open import Categories.Category.Monoidal
+open import Categories.Category.Monoidal.Simple
 open import Categories.Morphism using (Iso)
 
 import Nets.Properties
@@ -44,61 +48,39 @@ map-id : ∀ {a b} {A : Set a} {B : Set b} → (Sum.map (id {a} {A}) (id {b} {B}
 map-id (inj₁ _) = refl
 map-id (inj₂ _) = refl
 
+lemma : ∀ {a b c} {A : Set a} {B : Rel A b} (sel : ∀ {z z′} → B z z′ → Set c) →
+          {x y x′ y′ : A} → (f : B x x′) → (eq₁ : x ≡ y) → (eq₂ : x′ ≡ y′) →
+          sel (subst (λ w → B w y′) eq₁ (subst (B x) eq₂ f)) → sel f
+lemma _ _ refl refl e = e
+
+lemma′ : ∀ {a b c} {A : Set a} {B : Rel A b} (sel : ∀ {z z′} → B z z′ → Set c) →
+          {x y x′ y′ : A} → (f : B x x′) → (eq₁ : x ≡ y) → (eq₂ : x′ ≡ y′) →
+          sel f → sel (subst (λ w → B w y′) eq₁ (subst (B x) eq₂ f))
+lemma′ _ _ refl refl e = e
+
+lemma2 : ∀ {a b c d} {A : Set a} {B : Rel A b} {D : Set d} (sel : ∀ {z z′} → B z z′ → Set c) →
+           (sel′ : ∀ {z z′} → (h : B z z′) → sel h → D) →
+           {x y x′ y′ : A} → (f : B x x′) → (eq₁ : x ≡ y) → (eq₂ : x′ ≡ y′) →
+           (e : sel (subst (λ w → B w y′) eq₁ (subst (B x) eq₂ f))) →
+           sel′ (subst (λ w → B w y′) eq₁ (subst (B x) eq₂ f)) e ≡ sel′ f (lemma sel f eq₁ eq₂ e)
+lemma2 _ _ _ refl refl _ = refl
+
+lemma∘lemma′≡id : ∀ {a b c} {A : Set a} {B : Rel A b} (sel : ∀ {z z′} → B z z′ → Set c) →
+                  {x y x′ y′ : A} → (f : B x x′) → (eq₁ : x ≡ y) → (eq₂ : x′ ≡ y′) →
+                  (e : sel f) → lemma {B = B} sel f eq₁ eq₂ (lemma′ {B = B} sel f eq₁ eq₂ e) ≡ e
+lemma∘lemma′≡id sel f refl refl e = refl
+
+lemma′∘lemma≡id : ∀ {a b c} {A : Set a} {B : Rel A b} (sel : ∀ {z z′} → B z z′ → Set c) →
+                  {x y x′ y′ : A} → (f : B x x′) → (eq₁ : x ≡ y) → (eq₂ : x′ ≡ y′) →
+                  (e : sel (subst (λ w → B w y′) eq₁ (subst (B x) eq₂ f))) → lemma′ {B = B} sel f eq₁ eq₂ (lemma {B = B} sel f eq₁ eq₂ e) ≡ e
+lemma′∘lemma≡id _ _ refl refl e = refl
+
 Hypergraph-Monoidal : ∀ {l} → Monoidal (Hypergraph-Category {l})
-Hypergraph-Monoidal {l} = record
-  { ⊗ = record
-    { F₀ = Prod.uncurry _l++_
-    ; F₁ = Prod.uncurry _⨂_
-    ; identity = λ {AB} → record
-      { α = λ {(inj₁ ())}
-      ; α′ = λ ()
-      ; bijection = (λ ()) , (λ {(inj₁ ())})
-      ; obj-resp = λ {(inj₁ ())}
-      ; conns→-resp = let open ≡-Reasoning in λ where
-          (inj₁ i) → begin
-            _ ≡˘⟨ cong inj₁ (inject+-raise-splitAt (len (proj₁ AB)) (len (proj₂ AB)) i) ⟩
-            _ ≡⟨ cong (Sum.map₂ _) ([,]-∘-distr {f = inj₁} (splitAt (len (proj₁ AB)) i)) ⟩
-            _ ∎
-          (inj₂ ((_ , _ , (inj₁ ())) , _))
-      }
-    ; homomorphism = λ {X} {Y} {Z} {f} {g} → record {
-        homomorphism {proj₁ X} {proj₂ X} {proj₁ Y} {proj₂ Y}
-                     {proj₁ Z} {proj₂ Z} {proj₁ f} {proj₂ f}
-                     {proj₁ g} {proj₂ g} }
-    ; F-resp-≈ = λ {A} {B} {fg₁} {fg₂} f=f,g=g → record {
-        F-resp-≈ {proj₁ A}   {proj₁ B}   {proj₂ A}   {proj₂ B}
-                 {proj₁ fg₁} {proj₁ fg₂} {proj₂ fg₁} {proj₂ fg₂}
-                 f=f,g=g } 
-    }
-  ; unit = unit
-  ; unitorˡ = record { from = HC.id; to = HC.id ; iso = record
-                       { isoˡ = HC.identityˡ {f = HC.id}
-                       ; isoʳ = HC.identityˡ {f = HC.id}
-                       }
-                     }
-  ; unitorʳ = λ {X} → record { unitorʳ {X} }
-  ; associator = λ {X} {Y} {Z} → record { associator {X} {Y} {Z} }
-  ; unitorˡ-commute-from = λ {X} {Y} {f} →
-      let open SetoidReasoning (HC.hom-setoid {X} {Y}) in begin
-        _ ≈⟨ HC.identityˡ ⟩
-        _ ≈⟨ id-unit⨂- f ⟩
-        _ ≈˘⟨ HC.identityʳ ⟩
-        _ ∎
-  ; unitorˡ-commute-to = λ {X} {Y} {f} →
-      let open SetoidReasoning (HC.hom-setoid {X} {Y}) in begin
-        _ ≈⟨ HC.identityˡ ⟩
-        _ ≈˘⟨ id-unit⨂- f ⟩
-        _ ≈˘⟨ HC.identityʳ ⟩
-        _ ∎
-  ; unitorʳ-commute-from = {!!}
-  ; unitorʳ-commute-to = {!!}
-  ; assoc-commute-from = {!!}
-  ; assoc-commute-to = {!!}
-  ; triangle = {!!}
-  ; pentagon = {!!}
-  }
+Hypergraph-Monoidal {l} = monoidal ⊗ unit refl (λ {x} → l++-identityʳ x) (λ {x y z} → l++-assoc x y z) id-unit⨂- -⨂id-unit {!!}
   where
     module HC = Hypergraph-Category {l}
+    HC = Hypergraph-Category {l}
+
     module homomorphism {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
                         {f₁ : Hypergraph {l} X₁ Y₁} {f₂ : Hypergraph {l} X₂ Y₂}
                         {g₁ : Hypergraph {l} Y₁ Z₁} {g₂ : Hypergraph {l} Y₂ Z₂} where
@@ -234,20 +216,36 @@ Hypergraph-Monoidal {l} = record
         _ ≡˘⟨ [,]-map-commute (gg.LHS.conns→ _) ⟩
         _ ∎
 
-    unit = zero , []
-
-    -⨂id-unit : ∀ {A B} → (f : A HC.⇒ B) → (subst₂ HC._⇒_ (l++-identityʳ A) (l++-identityʳ B) (f ⨂ (HC.id {unit}))) ≋ f
-    -⨂id-unit {A} {B} f = record
-      { α = λ {(inj₁ e) → e}
-      ; α′ = inj₁
-      ; bijection = (λ e → refl)
-                  , (λ {(inj₁ e) → refl})
-      ; obj-resp = λ {(inj₁ e) → ELabel.refl}
-      ; conns→-resp = {!!}
+    ⊗ : Bifunctor HC HC HC
+    ⊗ = record
+      { F₀ = Prod.uncurry _l++_
+      ; F₁ = Prod.uncurry _⨂_
+      ; identity = λ {AB} → record
+        { α = λ {(inj₁ ())}
+        ; α′ = λ ()
+        ; bijection = (λ ()) , (λ {(inj₁ ())})
+        ; obj-resp = λ {(inj₁ ())}
+        ; conns→-resp = let open ≡-Reasoning in λ where
+            (inj₁ i) → begin
+              _ ≡˘⟨ cong inj₁ (inject+-raise-splitAt (len (proj₁ AB)) (len (proj₂ AB)) i) ⟩
+              _ ≡⟨ cong (Sum.map₂ _) ([,]-∘-distr {f = inj₁} (splitAt (len (proj₁ AB)) i)) ⟩
+              _ ∎
+            (inj₂ ((_ , _ , (inj₁ ())) , _))
+        }
+      ; homomorphism = λ {X} {Y} {Z} {f} {g} → record {
+          homomorphism {proj₁ X} {proj₂ X} {proj₁ Y} {proj₂ Y}
+                       {proj₁ Z} {proj₂ Z} {proj₁ f} {proj₂ f}
+                       {proj₁ g} {proj₂ g} }
+      ; F-resp-≈ = λ {A} {B} {fg₁} {fg₂} f=f,g=g → record {
+          F-resp-≈ {proj₁ A}   {proj₁ B}   {proj₂ A}   {proj₂ B}
+                   {proj₁ fg₁} {proj₁ fg₂} {proj₂ fg₁} {proj₂ fg₂}
+                   f=f,g=g } 
       }
 
-    id-unit⨂- : ∀ {A B} → (f : A HC.⇒ B) → (HC.id {unit} ⨂ f) ≋ f
-    id-unit⨂- {A} {B} f = record
+    unit = zero , []
+
+    id-unit⨂- : ∀ {A B} {f : A HC.⇒ B} → (HC.id {unit} ⨂ f) ≋ f
+    id-unit⨂- {A} {B} {f} = record
       { α = λ {(inj₂ e) → e}
       ; α′ = inj₂
       ; bijection = (λ e → refl)
@@ -268,28 +266,54 @@ Hypergraph-Monoidal {l} = record
         module f = Hypergraph f
         open ≡-Reasoning
 
-    module unitorʳ {X : List VLabel} where
-      from : (X l++ unit) HC.⇒ X
-      from rewrite (l++-identityʳ X) = HC.id
+    -⨂id-unit : ∀ {A B} {f : A HC.⇒ B} → subst (HC._⇒ _) (l++-identityʳ A) (subst (_ HC.⇒_) (l++-identityʳ B) (f ⨂ (HC.id {unit}))) ≋ f
+    -⨂id-unit {A} {B} {f} = record
+      { α = α₁ ∘ α₂
+      ; α′ = α₁′ ∘ α₂′
+      ; bijection = α₁α₂α₁′α₂′≡id
+                  , α₁′α₂′α₁α₂≡id
+      ; obj-resp = obj-resp
+      ; conns→-resp = {!!}
+      }
+      where
+        f′ = f ⨂ (HC.id {unit})
+        substf′ = subst (HC._⇒ B) (l++-identityʳ A) (subst ((A l++ unit) HC.⇒_) (l++-identityʳ B) f′)
 
-      to : X HC.⇒ (X l++ unit)
-      to rewrite (l++-identityʳ X) = HC.id
+        module f′ = Hypergraph f′
+        module LHS = Hypergraph substf′
+        module RHS = Hypergraph f
 
-      iso : Iso (Hypergraph-Category {l}) from to
-      iso rewrite (l++-identityʳ X) = record
-        { isoˡ = HC.identityˡ {f = HC.id}
-        ; isoʳ = HC.identityˡ {f = HC.id}
-        }
+        module _ {input} {output} where
+          sel = λ {z} {z′} h → Hypergraph.E {l} {z} {z′} h input output
+          sel′ = λ {z} {z′} h e → Hypergraph.o {l} {z} {z′} h e
 
-    module associator {X Y Z : List VLabel} where
-      from : ((X l++ Y) l++ Z) HC.⇒ (X l++ (Y l++ Z))
-      from rewrite (sym (l++-assoc X Y Z)) = HC.id
+          α₁ : f′.E input output → RHS.E input output
+          α₁ (inj₁ e) = e
 
-      to : (X l++ (Y l++ Z)) HC.⇒ ((X l++ Y) l++ Z)
-      to rewrite (sym (l++-assoc X Y Z)) = HC.id
-      
-      iso : Iso (Hypergraph-Category {l}) from to
-      iso rewrite (sym (l++-assoc X Y Z)) = record
-        { isoˡ = HC.identityˡ {f = HC.id}
-        ; isoʳ = HC.identityˡ {f = HC.id}
-        }
+          α₂ : LHS.E input output → f′.E input output
+          α₂ = lemma sel f′ (l++-identityʳ A) (l++-identityʳ B)
+
+          α₁′ : f′.E input output → LHS.E input output
+          α₁′ = lemma′ sel f′ (l++-identityʳ A) (l++-identityʳ B)
+
+          α₂′ : RHS.E input output → f′.E input output
+          α₂′ = inj₁
+
+          α₂′α₁≡id : ∀ e → α₂′ (α₁ e) ≡ e
+          α₂′α₁≡id (inj₁ e) = refl
+
+          α₁α₂α₁′α₂′≡id : ∀ e → α₁ (α₂ (α₁′ (α₂′ e))) ≡ e
+          α₁α₂α₁′α₂′≡id e = cong α₁ (lemma∘lemma′≡id sel f′ (l++-identityʳ A) (l++-identityʳ B) (α₂′ e))
+
+          α₁′α₂′α₁α₂≡id : ∀ e → α₁′ (α₂′ (α₁ (α₂ e))) ≡ e
+          α₁′α₂′α₁α₂≡id e = trans (cong α₁′ (α₂′α₁≡id (α₂ e))) (lemma′∘lemma≡id sel f′ (l++-identityʳ A) (l++-identityʳ B) e)
+
+          f′α₁≡f : ∀ e → f′.o e ≡ RHS.o (α₁ e)
+          f′α₁≡f (inj₁ e) = refl
+
+          obj-resp : (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α₁ (α₂ e)))
+          obj-resp e = begin
+            _ ≡⟨ lemma2 sel sel′ f′ (l++-identityʳ A) (l++-identityʳ B) ⟩
+            _ ≡⟨ f′α₁≡f (α₂ e) ⟩
+            _ ∎
+            where open SetoidReasoning (ELabel-setoid _ _)
