@@ -15,17 +15,11 @@ open import Relation.Binary.Construct.Union using (_∪_)
 
 
 import Nets.Hypergraph ≡-setoid as HGBase
-open import Nets.Properties ≡-setoid using (Hypergraph-Category)
+open import Nets.Category ≡-setoid using (Hypergraph-Category)
 
 module Nets.Example where 
 
---shorthands for common type interfaces
-0* : Σ _ (Vec ⊤)
-0* = 0 , []
-1* : Σ _ (Vec ⊤)
-1* = 1 , (tt ∷ [])
-2* : Σ _ (Vec ⊤)
-2* = 2 , (tt ∷ tt ∷ [])
+
 
 data Obj : Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Set where
 --the objects variables that we want to use along with their input/output type interfaces
@@ -36,8 +30,11 @@ data Obj : Σ _ (Vec ⊤) → Σ _ (Vec ⊤) → Set where
 data hierarchical :   (l : ℕ) → (s t : Σ _ (Vec ⊤)) → Set₁
 data eq :             (l : ℕ) → (s t : Σ _ (Vec ⊤)) → Rel (hierarchical l s t) (lsuc lzero) -- (G H : hierarchical l s t) → Set₁
 hierarchical-setoid : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → Setoid (lsuc lzero) (lsuc lzero)
+eq-refl :             (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x : hierarchical l s t} → eq l s t x x
+eq-sym :              (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x y : hierarchical l s t} → eq l s t x y → eq l s t y x
+eq-trans :            (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x y z : hierarchical l s t} →
+                      eq l s t x y → eq l s t y z → eq l s t x z
 
-{-# NO_POSITIVITY_CHECK #-}
 data hierarchical where
   lambda : {l : ℕ} →
            HGBase.Hypergraph (hierarchical-setoid l) {lzero} 2* 1* →
@@ -56,32 +53,28 @@ data eq where
 hierarchical-setoid level s t = record
   { Carrier = hierarchical level s t
   ; _≈_ = eq level s t
-  ; isEquivalence = eq-isEquivalence level s t
+  ; isEquivalence = record { refl = {!!} ; sym = eq-sym level s t ; trans = {!!} } -- eq-isEquivalence level s t
   }
-  where
-    module HC l = Hypergraph-Category (hierarchical-setoid l) {lzero}
 
-    eq-refl : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x : hierarchical l s t} → eq l s t x x
-    eq-refl (suc l) s t {lambda x} = lambda-eq x x (HC.Equiv.refl l)
-    eq-refl l s t {app} = app-eq
+module HC l = Hypergraph-Category (hierarchical-setoid l) {lzero}
 
-    eq-sym : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x y : hierarchical l s t} → eq l s t x y → eq l s t y x
-    eq-sym (suc l) s t {lambda x} {lambda y} (lambda-eq x y x=y) = lambda-eq y x (HC.Equiv.sym l x=y)
-    eq-sym l s t {app} {app} _ = app-eq
+eq-refl (suc l) s t {lambda x} = lambda-eq x x (HC.Equiv.refl l)
+eq-refl l s t {app} = app-eq
 
-    eq-trans : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → {x y z : hierarchical l s t} →
-               eq l s t x y → eq l s t y z → eq l s t x z
-    eq-trans (suc l) s t {lambda x} {lambda y} {lambda z} (lambda-eq x y x=y) (lambda-eq y z y=z) =
-      lambda-eq x z (HC.Equiv.trans l x=y y=z)
-    eq-trans l s t {app} {app} {app} _ _ = app-eq
+eq-sym (suc l) s t {lambda x} {lambda y} (lambda-eq x y x=y) = lambda-eq y x (Hypergraph-Category.Equiv.sym (hierarchical-setoid l) {lzero} x=y)
+eq-sym l s t {app} {app} _ = app-eq
 
-    eq-isEquivalence : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → IsEquivalence (eq l s t)
+eq-trans (suc l) s t {lambda x} {lambda y} {lambda z} (lambda-eq x y x=y) (lambda-eq y z y=z) =
+  lambda-eq x z (HC.Equiv.trans l x=y y=z)
+eq-trans l s t {app} {app} {app} _ _ = app-eq
+
+    {- eq-isEquivalence : (l : ℕ) → (s t : Σ _ (Vec ⊤)) → IsEquivalence (eq l s t)
     eq-isEquivalence l s t = record
       { refl = eq-refl l s t
       ; sym = eq-sym l s t
       ; trans = eq-trans l s t
       }
-
+    -}
 
 liftHG : ∀ {l s t} → HGBase.Hypergraph (hierarchical-setoid l      ) {lzero} s t →
                       HGBase.Hypergraph (hierarchical-setoid (suc l)) {lzero} s t
@@ -103,7 +96,6 @@ liftHG {l} {s} {t} h = record
 
 
 module HG l = HGBase (hierarchical-setoid l)
-module HC l = Hypergraph-Category (hierarchical-setoid l) {lzero}
 
 module pop l where
   open HC (suc l)
