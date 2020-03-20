@@ -16,3 +16,4 @@ You should also add extra lines with paths to the dependency libraries' `.agda-l
 Note: If you don't have a `.agda` folder or you don't know where it is try creating it using the command `mkdir ~/.agda`. Same for the libraries file: You can run `touch ~/.agda/libraries` to create it if it doesn't exist.
 
 
+The library has been checked successfully using Agda version 2.6.1
