@@ -53,7 +53,7 @@ module Nets.K-Utils {o ℓ e} (C : Category o ℓ e) where
     id ∘ id ∘ id     ≈⟨ identityˡ ⟩
     id ∘ id          ≈⟨ identityˡ ⟩
     id               ≈˘⟨ identityˡ ⟩
-    id ∘ id ∎ 
+    id ∘ id          ∎
     where open HomReasoning
 
   hexagon₁ : ∀ {A B C D E F} (f : C ⇒ D) (g : A ⇒ B) (h : E ⇒ F)
@@ -65,5 +65,5 @@ module Nets.K-Utils {o ℓ e} (C : Category o ℓ e) where
     f ∘ g            ≈⟨ eq ⟩
     h                ≈˘⟨ identityʳ ⟩
     h ∘ id           ≈˘⟨ identityˡ ⟩
-    id ∘ h ∘ id ∎ 
+    id ∘ h ∘ id      ∎
     where open HomReasoning

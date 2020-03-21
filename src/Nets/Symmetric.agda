@@ -29,7 +29,7 @@ module Nets.Symmetric {ℓₜ ℓₜᵣ : Level}
                       ) {l : Level} where
 
 open import Nets.Hypergraph VLabel-setoid ELabel-setoid
-open Core {l} using (Hypergraph; _≋[_][_]_; ≋[][]→≋)
+open Core {l} using (Hypergraph; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
 open import Nets.Category   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Category)
 open import Nets.Monoidal   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Monoidal)
 import Nets.K-Utils Hypergraph-Category as K-Utils
@@ -52,7 +52,7 @@ Hypergraph-Symmetric = record
         ; isoʳ = uncurry (flip braid-iso) AB
         }
       }
-    ; hexagon₁ = {!!}
+    ; hexagon₁ = λ {X} {Y} {Z} → hexagon₁ X Y Z
     ; hexagon₂ = {!!}
     }
   ; commutative = λ {X} {Y} → braid-iso Y X
@@ -207,9 +207,8 @@ Hypergraph-Symmetric = record
                  braid X (Y ⊗₀ Z)                ⇒⟨ (Y ⊗₀ Z) ⊗₀ X ⟩
                  associator.from {Y} {Z} {X}
                ⟩
-    hexagon₁ X Y Z = {!!} {- K-Utils.hexagon₁ f g h
-      (⊕-assoc Y X Z) (⊕-assoc X Y Z) (⊕-assoc Y Z X)
-      (≋[][]→≋ (subst (_≋[ ⊕-assoc X Y Z ][ sym (⊕-assoc Y Z X) ] h) (⊚[]≡⊚ {f = f} {⊕-assoc Y X Z} {g}) hex))
+    hexagon₁ X Y Z = K-Utils.hexagon₁ f g h
+      (⊕-assoc Y X Z) (⊕-assoc X Y Z) (⊕-assoc Y Z X) {!!} -- (≋[][]→≋ hex)
       where
         f = cid {Y} ⊗₁ (braid X Z)
         g = (braid X Y) ⊗₁ cid {Z}
@@ -217,9 +216,4 @@ Hypergraph-Symmetric = record
 
         hex : f ⊚[ ⊕-assoc Y X Z ] g ≋[ ⊕-assoc X Y Z ][ sym (⊕-assoc Y Z X) ] h
         hex = record
-          { α = λ {(inj₁ ())}
-          ; α′ = λ ()
-          ; bijection = {!!}
-          ; obj-resp = {!!}
-          ; conns→-resp = {!!}
-          } -}
+          { α = λ {(inj₁ ())} ; α′ = {!!} ; bijection = {!!} ; obj-resp = {!!} ; conns→-resp = {!!} }

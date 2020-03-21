@@ -116,7 +116,7 @@ module Core {l : Level} where
   ≋[][]→≋ {A≡A′ = refl} {refl} l=r = l=r
 
 
-  -- heterogenous hypergraph composition
+  -- hypergraph composition
   _⊚_ : ∀ {A B C : List VLabel} → Hypergraph B C → Hypergraph A B → Hypergraph A C
   BC ⊚ AB = record
     { E = E
@@ -391,6 +391,11 @@ module Core {l : Level} where
       bijection : _
       bijection = bijection₁ , bijection₂
 
+  _⊚[_]_ : ∀ {A B C D : List VLabel} → Hypergraph C D → B ≡ C → Hypergraph A B → Hypergraph A D
+  f ⊚[ eq ] g rewrite eq = f ⊚ g
+
+  ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → (f : Hypergraph C D) → (BC : B ≡ C) → (g : Hypergraph A B) → f ⊚[ BC ] g ≡ f ⊚ (subst (Hypergraph A) BC g)
+  ⊚[]≡⊚ f refl g = refl
 
   -- Hypergraph tensor product
   _⨂_ : ∀ {A B C D : List VLabel} → Hypergraph A B → Hypergraph C D → Hypergraph (A ⊕ C) (B ⊕ D)
