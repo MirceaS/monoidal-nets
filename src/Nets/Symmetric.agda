@@ -216,4 +216,18 @@ Hypergraph-Symmetric = record
 
         hex : f ⊚[ ⊕-assoc Y X Z ] g ≋[ ⊕-assoc X Y Z ][ sym (⊕-assoc Y Z X) ] h
         hex = record
-          { α = λ {(inj₁ ())} ; α′ = {!!} ; bijection = {!!} ; obj-resp = {!!} ; conns→-resp = {!!} }
+          { α = λ
+            { (inj₁ (inj₁ ()))
+            ; (inj₂ (inj₁ ()))
+            }
+          ; α′ = λ ()
+          ; bijection = (λ ()) , (λ
+            { (inj₁ (inj₁ ()))
+            ; (inj₂ (inj₁ ()))
+            })
+          ; obj-resp = λ
+            { (inj₁ (inj₁ ()))
+            ; (inj₂ (inj₁ ()))
+            }
+          ; conns→-resp = {!!}
+          }

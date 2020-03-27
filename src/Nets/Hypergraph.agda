@@ -1,5 +1,14 @@
 {-# OPTIONS --without-K --safe #-}
 
+{- This is the main file of this library and it formalises the idea of a String Diagram.
+ - Throughout this project, by some abuse of notation, we refer to these String Diagrams
+ - as Hypergraphs as that is one way that they can be represented but the reader should
+ - ideally have String Diagrams in mind while reading through this project.
+ -
+ - ~ Octavian-Mircea Sebe, 2020
+ -}
+
+
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Agda.Builtin.Equality
 open import Data.Product as Prod using (Σ; _,_; proj₁; proj₂; ∃; _×_)
@@ -78,11 +87,20 @@ module Core {l : Level} where
       -- the label associated with each box
       o : ∀ {input output} → E input output → ELabel {input} {output}
 
+    ↑ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
+        Σ Edge (Fin ∘ len ∘ s) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ proj₁)
+    ↑ f ((s , t , e) , i) = ((s , t , f e) , i)
+
+    ↑′ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
+        Σ Edge (Fin ∘ len ∘ t) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ proj₁ ∘ proj₂)
+    ↑′ f ((s , t , e) , i) = ((s , t , f e) , i)
+
 
   -- hypergraph isomorphism
 
   -- defining the isomorphism heterogenously saves us a lot of trouble later on
-  record _≋[_][_]_ {A B A′ B′ : List VLabel} (LHS : Hypergraph A B) (A≡A′ : A ≡ A′) (B≡B′ : B ≡ B′) (RHS : Hypergraph A′ B′) : Set (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ) where
+  record _≋[_][_]_ {A B A′ B′ : List VLabel} (LHS : Hypergraph A B) (A≡A′ : A ≡ A′) (B≡B′ : B ≡ B′)
+                   (RHS : Hypergraph A′ B′) : Set (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ) where
     module LHS = Hypergraph LHS
     module RHS = Hypergraph RHS
     field
@@ -93,9 +111,9 @@ module Core {l : Level} where
       obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
 
     α-in-index :  LHS.in-index  → RHS.in-index
-    α-in-index  = Sum.map (subst (Fin ∘ len) B≡B′) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+    α-in-index  = Sum.map (subst (Fin ∘ len) B≡B′) (LHS.↑ α)
     α-out-index : LHS.out-index → RHS.out-index
-    α-out-index = Sum.map (subst (Fin ∘ len) A≡A′) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+    α-out-index = Sum.map (subst (Fin ∘ len) A≡A′) (LHS.↑′ α)
 
     field
       conns→-resp : (i : LHS.out-index) →
@@ -110,74 +128,57 @@ module Core {l : Level} where
 
   module _≋_ = _≋[_][_]_
 
-
   ≋[][]→≋ : ∀ {A B A′ B′ : List VLabel} {LHS : Hypergraph A B} {A≡A′ : A ≡ A′} {B≡B′ : B ≡ B′} {RHS : Hypergraph A′ B′} →
              LHS ≋[ A≡A′ ][ B≡B′ ] RHS → subst₂ Hypergraph A≡A′ B≡B′ LHS ≋ RHS
   ≋[][]→≋ {A≡A′ = refl} {refl} l=r = l=r
 
 
-  -- hypergraph composition
-  _⊚_ : ∀ {A B C : List VLabel} → Hypergraph B C → Hypergraph A B → Hypergraph A C
-  BC ⊚ AB = record
+  -- heterogenous hypergraph composition
+  _⊚[_]_ : ∀ {A B C D : List VLabel} → Hypergraph C D → B ≡ C → Hypergraph A B → Hypergraph A D
+  _⊚[_]_ {A} {B} {C} {D} CD BC AB = record
     { E = E
     ; conns→ = conns→
     ; conns← = conns←
     ; type-match = type-match
     ; bijection = bijection
-    ; o = [ AB.o , BC.o ]′
+    ; o = [ AB.o , CD.o ]′
     }
     where
       module AB = Hypergraph AB
-      module BC = Hypergraph BC
+      module CD = Hypergraph CD
+
+      sub = subst (Fin ∘ len) BC
+      sub′ = subst (Fin ∘ len) (sym BC)
+
+      lemma : ∀ j → lookup (vec-of-list B) j ≡ lookup (vec-of-list C) (sub j)
+      lemma _ rewrite BC = refl
 
       E : _
-      E input output = (AB.E input output) ⊎ (BC.E input output)
+      E input output = (AB.E input output) ⊎ (CD.E input output)
 
-      -- →
       conns→ : _
       conns→ (inj₁ i) =
-        [ (λ j →
-            Sum.map₂
-              (λ {((_ , _ , e) , k) → (_ , _ , inj₂ e) , k})
-              (BC.conns→ (inj₁ j))
-          )
-        , (λ {((_ , _ , e) , j) → inj₂ ((_ , _ , inj₁ e) , j)})
+        [ (λ j → Sum.map₂ (CD.↑ inj₂) (CD.conns→ (inj₁ (sub j))))
+        , inj₂ ∘ (AB.↑ inj₁)
         ]′ (AB.conns→ (inj₁ i))
       conns→ (inj₂ ((_ , _ , inj₁ e) , i)) =
-        [ (λ j →
-            Sum.map₂
-              (λ {((_ , _ , e) , k) → (_ , _ , inj₂ e) , k})
-              (BC.conns→ (inj₁ j))
-          )
-        , (λ {((_ , _ , e) , j) → inj₂ ((_ , _ , inj₁ e) , j)})
+        [ (λ j → Sum.map₂ (CD.↑ inj₂) (CD.conns→ (inj₁ (sub j))))
+        , inj₂ ∘ (AB.↑ inj₁)
         ]′ (AB.conns→ (inj₂ ((_ , _ , e) , i)))
       conns→ (inj₂ ((_ , _ , inj₂ e) , j)) =
-        Sum.map₂
-          (λ {((_ , _ , e) , k) → (_ , _ , inj₂ e) , k})
-          (BC.conns→ (inj₂ ((_ , _ , e) , j)))
+        Sum.map₂ (CD.↑ inj₂) (CD.conns→ (inj₂ ((_ , _ , e) , j)))
 
-      -- ←
       conns← : _
       conns← (inj₁ i) =
-        [ (λ j →
-            Sum.map₂
-              (λ {((_ , _ , e) , k) → (_ , _ , inj₁ e) , k})
-              (AB.conns← (inj₁ j))
-          )
-        , (λ {((_ , _ , e) , j) → inj₂ ((_ , _ , inj₂ e) , j)})
-        ]′ (BC.conns← (inj₁ i))
+        [ (λ j → Sum.map₂ (AB.↑′ inj₁) (AB.conns← (inj₁ (sub′ j))))
+        , inj₂ ∘ (CD.↑′ inj₂)
+        ]′ (CD.conns← (inj₁ i))
       conns← (inj₂ ((_ , _ , inj₁ e) , j)) =
-        Sum.map₂
-          (λ {((_ , _ , e) , k) → (_ , _ , inj₁ e) , k})
-          (AB.conns← (inj₂ ((_ , _ , e) , j)))
+        Sum.map₂ (AB.↑′ inj₁) (AB.conns← (inj₂ ((_ , _ , e) , j)))
       conns← (inj₂ ((_ , _ , inj₂ e) , i)) =
-        [ (λ j →
-            Sum.map₂
-              (λ {((_ , _ , e) , k) → (_ , _ , inj₁ e) , k})
-              (AB.conns← (inj₁ j))
-          )
-        , (λ {((_ , _ , e) , j) → inj₂ ((_ , _ , inj₂ e) , j)})
-        ]′ (BC.conns← (inj₂ ((_ , _ , e) , i)))
+        [ (λ j → Sum.map₂ (AB.↑′ inj₁) (AB.conns← (inj₁ (sub′ j))))
+        , inj₂ ∘ (CD.↑′ inj₂)
+        ]′ (CD.conns← (inj₂ ((_ , _ , e) , i)))
 
       --properties
       type-match : _
@@ -186,17 +187,19 @@ module Core {l : Level} where
           open SetoidReasoning VLabel-setoid
           type-match′ : _
           type-match′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
-          type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+          type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
           type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
             _ ≈⟨ AB.type-match (inj₁ i) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
-            _ ≈⟨ BC.type-match (inj₁ j) ⟩
+            _ ≡⟨ lemma j ⟩
+            _ ≈⟨ CD.type-match (inj₁ (sub j)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
             _ ∎
           type-match′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
             _ ≈⟨ AB.type-match (inj₁ i) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
-            _ ≈⟨ BC.type-match (inj₁ j) ⟩
+            _ ≡⟨ lemma j ⟩
+            _ ≈⟨ CD.type-match (inj₁ (sub j)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
             _ ∎
           type-match′ (inj₁ i) | (inj₂ _) | [ i→j ] = begin
@@ -204,30 +207,32 @@ module Core {l : Level} where
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
             _ ∎
           type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
-          type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
+          type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
           type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
             _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
-            _ ≈⟨ BC.type-match (inj₁ j) ⟩
+            _ ≡⟨ lemma j ⟩
+            _ ≈⟨ CD.type-match (inj₁ (sub j)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
             _ ∎
           type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
             _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
-            _ ≈⟨ BC.type-match (inj₁ j) ⟩
+            _ ≡⟨ lemma j ⟩
+            _ ≈⟨ CD.type-match (inj₁ (sub j)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
             _ ∎
           type-match′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = begin
             _ ≈⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
             _ ∎
-          type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns→ (inj₂ ((_ , _ , e) , i)))
+          type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
           type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] = begin
-            _ ≈⟨ BC.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ≈⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
             _ ∎
           type-match′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = begin
-            _ ≈⟨ BC.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+            _ ≈⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
             _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
             _ ∎
 
@@ -236,78 +241,54 @@ module Core {l : Level} where
         where
           open ≡-Reasoning
           bijection₁′ : _
-          bijection₁′ (inj₁ i) with (BC.conns← (inj₁ i)) | (inspect BC.conns← (inj₁ i))
-          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
-          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
-              _ ≡⟨ AB.bijection₁ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₁ i) ⟩
-              _ ∎))
-          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
-              _ ≡⟨ AB.bijection₁ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₁ i) ⟩
-              _ ∎))
-          bijection₁′ (inj₁ i) | (inj₂ _) | [ i→j ] =
-            cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₁ i) ⟩
+          bijection₁′ (inj₁ i) with (CD.conns← (inj₁ i)) | (inspect CD.conns← (inj₁ i))
+          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ (sub′ j))) | (inspect AB.conns← (inj₁ (sub′ j)))
+          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong AB.conns→ j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (AB.bijection₁ (inj₁ (sub′ j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (CD.conns→ ∘ inj₁) (subst-subst-sym BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong CD.conns→ i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (CD.bijection₁ (inj₁ i)) ⟩
+              _ ∎
+          bijection₁′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong AB.conns→ j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (AB.bijection₁ (inj₁ (sub′ j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (CD.conns→ ∘ inj₁) (subst-subst-sym BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong CD.conns→ i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (CD.bijection₁ (inj₁ i)) ⟩
+              _ ∎
+          bijection₁′ (inj₁ i) | (inj₂ _) | [ i→j ] = cong (Sum.map₂ _) (begin
+              _ ≡˘⟨ cong CD.conns→ i→j ⟩
+              _ ≡⟨ CD.bijection₁ (inj₁ i) ⟩
               _ ∎)
           bijection₁′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns← (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns← (inj₂ ((_ , _ , e) , i)))
-          bijection₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ _) | [ i→j ] =
-            cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
+          bijection₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ _) | [ i→j ] = cong [ _ , _ ]′ (begin
+              _ ≡˘⟨ cong AB.conns→ i→j ⟩
               _ ≡⟨ AB.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
-          bijection₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] =
-            cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym i→j) ⟩
+          bijection₁′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = cong [ _ , _ ]′ (begin
+              _ ≡˘⟨ cong AB.conns→ i→j ⟩
               _ ≡⟨ AB.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
-          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns← (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns← (inj₂ ((_ , _ , e) , i)))
-          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ j)) | (inspect AB.conns← (inj₁ j))
-          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
-              _ ≡⟨ AB.bijection₁ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
-              _ ∎))
-          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong AB.conns→ (sym j→k) ⟩
-              _ ≡⟨ AB.bijection₁ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
-              _ ∎))
-          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] =
-            cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong BC.conns→ (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
+          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns← (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns← (inj₂ ((_ , _ , e) , i)))
+          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] with (AB.conns← (inj₁ (sub′ j))) | (inspect AB.conns← (inj₁ (sub′ j)))
+          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong AB.conns→ j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (AB.bijection₁ (inj₁ (sub′ j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (CD.conns→ ∘ inj₁) (subst-subst-sym BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong CD.conns→ i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (CD.bijection₁ (inj₂ ((_ , _ , e) , i))) ⟩
+              _ ∎
+          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong AB.conns→ j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (AB.bijection₁ (inj₁ (sub′ j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (CD.conns→ ∘ inj₁) (subst-subst-sym BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong CD.conns→ i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (CD.bijection₁ (inj₂ ((_ , _ , e) , i))) ⟩
+              _ ∎
+          bijection₁′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = cong (Sum.map₂ _) (begin
+              _ ≡˘⟨ cong CD.conns→ i→j ⟩
+              _ ≡⟨ CD.bijection₁ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
 
       bijection₂ : _
@@ -316,86 +297,64 @@ module Core {l : Level} where
           open ≡-Reasoning
           bijection₂′ : _
           bijection₂′ (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
-          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
-          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym j→k) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
-              _ ≡⟨ AB.bijection₂ (inj₁ i) ⟩
-              _ ∎))
-          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym j→k) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
-              _ ≡⟨ AB.bijection₂ (inj₁ i) ⟩
-              _ ∎))
-          bijection₂′ (inj₁ i) | (inj₂ _) | [ i→j ] =
-            cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
+          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong CD.conns← j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (CD.bijection₂ (inj₁ (sub j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (AB.conns← ∘ inj₁) (subst-sym-subst BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong AB.conns← i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (AB.bijection₂ (inj₁ i)) ⟩
+              _ ∎
+          bijection₂′ (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong CD.conns← j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (CD.bijection₂ (inj₁ (sub j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (AB.conns← ∘ inj₁) (subst-sym-subst BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong AB.conns← i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (AB.bijection₂ (inj₁ i)) ⟩
+              _ ∎
+          bijection₂′ (inj₁ i) | (inj₂ _) | [ i→j ] = cong (Sum.map₂ _) (begin
+              _ ≡˘⟨ cong AB.conns← i→j ⟩
               _ ≡⟨ AB.bijection₂ (inj₁ i) ⟩
               _ ∎)
           bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
-          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (BC.conns→ (inj₁ j)) | (inspect BC.conns→ (inj₁ j))
-          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym j→k) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
-              _ ≡⟨ AB.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
-              _ ∎))
-          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = trans
-            (cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym j→k) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₁ j) ⟩
-              _ ∎))
-            (cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
-              _ ≡⟨ AB.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
-              _ ∎))
-          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] =
-            cong (Sum.map₂ _)
-              (begin
-              _ ≡⟨ cong AB.conns← (sym i→j) ⟩
+          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
+          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong CD.conns← j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (CD.bijection₂ (inj₁ (sub j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (AB.conns← ∘ inj₁) (subst-sym-subst BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong AB.conns← i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (AB.bijection₂ (inj₂ ((_ , _ , e) , i))) ⟩
+              _ ∎
+          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+              _ ≡˘⟨ cong [ _ , _ ]′   (cong CD.conns← j→k) ⟩
+              _ ≡⟨  cong [ _ , _ ]′   (CD.bijection₂ (inj₁ (sub j))) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (cong (AB.conns← ∘ inj₁) (subst-sym-subst BC)) ⟩
+              _ ≡˘⟨ cong (Sum.map₂ _) (cong AB.conns← i→j) ⟩
+              _ ≡⟨  cong (Sum.map₂ _) (AB.bijection₂ (inj₂ ((_ , _ , e) , i))) ⟩
+              _ ∎
+          bijection₂′ (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = cong (Sum.map₂ _) (begin
+              _ ≡˘⟨ cong AB.conns← i→j ⟩
               _ ≡⟨ AB.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
-          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) with (BC.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect BC.conns→ (inj₂ ((_ , _ , e) , i)))
-          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] =
-            cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
+          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
+          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] = cong [ _ , _ ]′ (begin
+              _ ≡˘⟨ cong CD.conns← i→j ⟩
+              _ ≡⟨ CD.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
-          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] =
-            cong [ _ , _ ]′
-              (begin
-              _ ≡⟨ cong BC.conns← (sym i→j) ⟩
-              _ ≡⟨ BC.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
+          bijection₂′ (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = cong [ _ , _ ]′ (begin
+              _ ≡˘⟨ cong CD.conns← i→j ⟩
+              _ ≡⟨ CD.bijection₂ (inj₂ ((_ , _ , e) , i)) ⟩
               _ ∎)
       bijection : _
       bijection = bijection₁ , bijection₂
 
-  _⊚[_]_ : ∀ {A B C D : List VLabel} → Hypergraph C D → B ≡ C → Hypergraph A B → Hypergraph A D
-  f ⊚[ eq ] g rewrite eq = f ⊚ g
+  -- homogenous hypergraph composition
+  _⊚_ : ∀ {A B C} → Hypergraph B C → Hypergraph A B → Hypergraph A C
+  f ⊚ g = f ⊚[ refl ] g
 
-  ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → (f : Hypergraph C D) → (BC : B ≡ C) → (g : Hypergraph A B) → f ⊚[ BC ] g ≡ f ⊚ (subst (Hypergraph A) BC g)
-  ⊚[]≡⊚ f refl g = refl
+  ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → {f : Hypergraph C D} → {BC : B ≡ C} → {g : Hypergraph A B} → f ⊚[ BC ] g ≡ f ⊚ (subst (Hypergraph A) BC g)
+  ⊚[]≡⊚ {BC = refl} = refl
+
 
   -- Hypergraph tensor product
   _⨂_ : ∀ {A B C D : List VLabel} → Hypergraph A B → Hypergraph C D → Hypergraph (A ⊕ C) (B ⊕ D)

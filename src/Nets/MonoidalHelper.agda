@@ -9,6 +9,7 @@ open import Categories.Category
 open import Categories.Category.Monoidal
 open import Categories.Functor using (Functor)
 open import Categories.Functor.Bifunctor using (Bifunctor)
+open import Categories.Morphism.HeterogeneousIdentity.Properties using (BF-hid)
 
 open import Nets.Utils
 
@@ -26,6 +27,7 @@ open import Nets.Category   VLabel-setoid ELabel-setoid {l} renaming (Hypergraph
 open import Nets.K-Utils HC
 
 open import Categories.Morphism HC using (_≅_; module _≅_)
+open import Categories.Morphism.HeterogeneousIdentity HC
 
 module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
 
@@ -37,10 +39,6 @@ module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
 
   _⊗₁_ : ∀ {X Y Z W} → X ⇒ Y → Z ⇒ W → X ⊗₀ Z ⇒ Y ⊗₀ W
   f ⊗₁ g = F₁ (f , g)
-
-  subst-identity : ∀ {A B C D} (AB : A ≡ B) (CD : C ≡ D) →
-                   sid₁ AB ⊗₁ sid₁ CD ≈ sid₁ (cong₂ _⊗₀_ AB CD)
-  subst-identity refl refl = identity
 
   module _ (unitl : ∀ {X} → unit ⊗₀ X ≡ X)
            (unitr : ∀ {X} → X ⊗₀ unit ≡ X)
@@ -58,31 +56,31 @@ module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
 
       unitorˡ : unit ⊗₀ X ≅ X
       unitorˡ = record
-        { from = sid₁ unitl
-        ; to   = sid₂ unitl
+        { from = hid unitl
+        ; to   = hid (sym unitl)
         ; iso  = record
-          { isoˡ = sidˡ unitl
-          ; isoʳ = sidʳ unitl
+          { isoˡ = hid-symˡ unitl
+          ; isoʳ = hid-symʳ unitl
           }
         }
 
       unitorʳ : X ⊗₀ unit ≅ X
       unitorʳ = record
-        { from = sid₁ unitr
-        ; to   = sid₂ unitr
+        { from = hid unitr
+        ; to   = hid (sym unitr)
         ; iso  = record
-          { isoˡ = sidˡ unitr
-          ; isoʳ = sidʳ unitr
+          { isoˡ = hid-symˡ unitr
+          ; isoʳ = hid-symʳ unitr
           }
         }
 
       associator : (X ⊗₀ Y) ⊗₀ Z ≅ X ⊗₀ (Y ⊗₀ Z)
       associator = record
-        { from = sid₁ assoc
-        ; to   = sid₂ assoc
+        { from = hid assoc
+        ; to   = hid (sym assoc)
         ; iso  = record
-          { isoˡ = sidˡ assoc
-          ; isoʳ = sidʳ assoc
+          { isoˡ = hid-symˡ assoc
+          ; isoʳ = hid-symʳ assoc
           }
         }
           
@@ -110,16 +108,16 @@ module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
 
       triangle : ∀ {X Y} → (id {Y} ⊗₁ unitorˡ.from {X}) ∘ associator.from ≈ unitorʳ.from ⊗₁ id
       triangle = begin
-        _ ≈⟨ subst-identity refl unitl ⟩∘⟨refl ⟩
+        _ ≈⟨ BF-hid ⊗ refl unitl ⟩∘⟨refl ⟩
         _ ≈⟨ id-triangle assoc (cong₂ _⊗₀_ refl unitl) (cong₂ _⊗₀_ unitr refl) ⟩
-        _ ≈˘⟨ subst-identity unitr refl ⟩
+        _ ≈˘⟨ BF-hid ⊗ unitr refl ⟩
         _ ∎
         where open HomReasoning hiding (refl; sym; trans)
 
-      pentagon : ∀ {X Y Z W} → (id ⊗₁ sid₁ assoc) ∘ sid₁ (assoc {X} {Y ⊗₀ Z}) ∘ (sid₁ assoc ⊗₁ id {W}) ≈
-                                sid₁ assoc ∘ sid₁ assoc
+      pentagon : ∀ {X Y Z W} → (id ⊗₁ hid assoc) ∘ hid (assoc {X} {Y ⊗₀ Z}) ∘ (hid assoc ⊗₁ id {W}) ≈
+                                hid assoc ∘ hid assoc
       pentagon = begin
-        _ ≈⟨ subst-identity refl assoc ⟩∘⟨ refl⟩∘⟨ subst-identity assoc refl ⟩
+        _ ≈⟨ BF-hid ⊗ refl assoc ⟩∘⟨ refl⟩∘⟨ BF-hid ⊗ assoc refl ⟩
         _ ≈⟨ id-pentagon (cong₂ _⊗₀_ assoc refl) assoc (cong₂ _⊗₀_ refl assoc) assoc assoc ⟩
         _ ∎
         where open HomReasoning hiding (refl; sym; trans)
