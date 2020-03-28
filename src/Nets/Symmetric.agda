@@ -34,6 +34,11 @@ open import Nets.Category   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Ca
 open import Nets.Monoidal   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Monoidal)
 import Nets.K-Utils Hypergraph-Category as K-Utils
 
+open import Categories.Morphism Hypergraph-Category using (_≅_; module ≅)
+open import Categories.Morphism.HeterogeneousIdentity Hypergraph-Category
+open import Categories.Morphism.Properties Hypergraph-Category using (Iso-≈; Iso-∘)
+open import Categories.Category.Monoidal.Utilities Hypergraph-Monoidal using (_⊗ᵢ_)
+
 
 Hypergraph-Symmetric : Symmetric Hypergraph-Monoidal
 Hypergraph-Symmetric = record
@@ -42,18 +47,17 @@ Hypergraph-Symmetric = record
       { F⇒G = record
         { η = uncurry braid
         ; commute = uncurry braid-comm
+        ; sym-commute = λ (x , y) → Equiv.sym (braid-comm x y)
         }
       ; F⇐G = record
         { η = uncurry (flip braid)
         ; commute = uncurry (flip braid-comm)
+        ; sym-commute = λ (x , y) → Equiv.sym (braid-comm y x)
         }
-      ; iso = λ AB → record
-        { isoˡ = uncurry braid-iso AB
-        ; isoʳ = uncurry (flip braid-iso) AB
-        }
+      ; iso = λ (x , y) → _≅_.iso (braid-≅ x y)
       }
     ; hexagon₁ = λ {X} {Y} {Z} → hexagon₁ X Y Z
-    ; hexagon₂ = {!!}
+    ; hexagon₂ = λ {X} {Y} {Z} → hexagon₂ X Y Z
     }
   ; commutative = λ {X} {Y} → braid-iso Y X
   }
@@ -192,9 +196,18 @@ Hypergraph-Symmetric = record
       }
       where
         open ≡-Reasoning
-
         a = len A
         b = len B
+
+    braid-≅ : ∀ A B → A ⊗₀ B ≅ B ⊗₀ A
+    braid-≅ A B = record
+      { from = braid A B
+      ; to = braid B A
+      ; iso = record
+        { isoˡ = braid-iso A B
+        ; isoʳ = braid-iso B A
+        }
+      }
 
     open Commutation
 
@@ -207,27 +220,91 @@ Hypergraph-Symmetric = record
                  braid X (Y ⊗₀ Z)                ⇒⟨ (Y ⊗₀ Z) ⊗₀ X ⟩
                  associator.from {Y} {Z} {X}
                ⟩
-    hexagon₁ X Y Z = K-Utils.hexagon₁ f g h
-      (⊕-assoc Y X Z) (⊕-assoc X Y Z) (⊕-assoc Y Z X) {!!} -- (≋[][]→≋ hex)
+    hexagon₁ X Y Z = let open HomReasoning hiding (refl; sym; trans) in begin
+      _ ≈˘⟨ refl⟩∘⟨ hid-subst-cod g (⊕-assoc Y X Z) ⟩
+      _ ≡˘⟨ ⊚[]≡⊚ {f = f} {⊕-assoc Y X Z} {g} ⟩
+      _ ≈˘⟨ ≋[][]→≋ hex ⟩
+      _ ≈⟨ hid-subst₂ (sym (⊕-assoc X Y Z)) (⊕-assoc Y Z X) h ⟩
+      _ ≈⟨ refl⟩∘⟨ refl⟩∘⟨ hid-sym-sym (⊕-assoc X Y Z) ⟩
+      _ ∎
       where
         f = cid {Y} ⊗₁ (braid X Z)
         g = (braid X Y) ⊗₁ cid {Z}
         h = braid X (Y ⊗₀ Z)
 
-        hex : f ⊚[ ⊕-assoc Y X Z ] g ≋[ ⊕-assoc X Y Z ][ sym (⊕-assoc Y Z X) ] h
+        hex : h ≋[ sym (⊕-assoc X Y Z) ][ ⊕-assoc Y Z X ] f ⊚[ ⊕-assoc Y X Z ] g
         hex = record
-          { α = λ
+          { α = λ ()
+          ; α′ = λ
             { (inj₁ (inj₁ ()))
             ; (inj₂ (inj₁ ()))
             }
-          ; α′ = λ ()
-          ; bijection = (λ ()) , (λ
+          ; bijection = (λ
             { (inj₁ (inj₁ ()))
             ; (inj₂ (inj₁ ()))
-            })
-          ; obj-resp = λ
-            { (inj₁ (inj₁ ()))
-            ; (inj₂ (inj₁ ()))
-            }
-          ; conns→-resp = {!!}
+            }) , (λ ())
+          ; obj-resp = λ ()
+          ; conns→-resp = λ {(inj₁ i) → conns→-resp i} -- begin
+              -- _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt (x + y) (sub₁ i)) ⟩
+              -- _ ≡⟨ {!!} ⟩
+              -- _ ∎}
           }
+          -- [ (λ j → Sum.map₂ (f.↑ inj₂) (f.conns→ (inj₁ (subst (Fin ∘ len) (⊕-assoc Y X Z) j))))
+          -- , inj₂ ∘ (g.↑ inj₁) ]′
+          -- (g.conns→ (inj₁ (subst (Fin ∘ len) (⊕-assoc X Y Z) i)))
+          --
+          -- [ ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→ ∘ inj₁)
+          --               , (inj₁ ∘ (raise (len B)))
+          --               ]′ (splitAt (len A) (subst (Fin ∘ len) (⊕-assoc X Y Z) i))
+          --
+          -- ≡
+          -- inj₁ (subst (Fin ∘ len) (⊕-assoc Y Z X) ([ raise (y + z) , inject+ x ] (splitAt x i)))
+          where
+            module f = Hypergraph f
+            module g = Hypergraph g
+            module h = Hypergraph h
+            module RHS = Hypergraph (f ⊚[ ⊕-assoc Y X Z ] g)
+
+            x = len X
+            y = len Y
+            z = len Z
+
+            open ≡-Reasoning
+
+            sub₁ = subst (Fin ∘ len) (sym (⊕-assoc X Y Z))
+            sub₂ = subst (Fin ∘ len) (⊕-assoc Y Z X)
+            sub₃ = subst (Fin ∘ len) (⊕-assoc Y X Z)
+
+            conns→-resp : (i : Fin (len h.inp)) →
+                           RHS.conns→ (inj₁ (subst (Fin ∘ len) (sym (⊕-assoc X Y Z)) i)) ≡
+                           inj₁ (subst (Fin ∘ len) (⊕-assoc Y Z X) ([ raise (y + z) , inject+ x ] (splitAt x i)))
+            conns→-resp i with (splitAt x i)
+            conns→-resp i    | inj₁ i₁ = begin
+              {- _ ≡⟨ [,]-cong (λ j → [,]-∘-distr {f = Sum.map₂ (RHS.↑ inj₂)} (splitAt y (sub₂ j)))
+                            (λ _ → refl) ([ inj₁ ∘ (inject+ z) ∘ [ _ , _ ] ∘ (splitAt x) , inj₁ ∘ (raise (y + x)) ] (splitAt (x + y) (sub₁ i))) ⟩ -}
+              {- _ ≡˘⟨ [,]-cong (λ j → [,]-∘-distr {f = inj₁} (splitAt y (sub₂ j)))
+                            (λ _ → refl) ([ _ , inj₁ ∘ (raise (y + x)) ] (splitAt (x + y) (sub₁ i))) ⟩ -}
+              -- _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt (x + y) (sub₁ i)) ⟩
+              _ ≡⟨ {!!} ⟩
+              _ ∎
+
+            
+
+    hexagon₂ : ∀ X Y Z →
+               [ X ⊗₀ Y ⊗₀ Z ⇒ (Z ⊗₀ X) ⊗₀ Y ]⟨
+                 cid {X} ⊗₁ (braid Y Z)          ⇒⟨ X ⊗₀ Z ⊗₀ Y ⟩
+                 (associator.to {X} {Z} {Y}       ⇒⟨ (X ⊗₀ Z) ⊗₀ Y ⟩
+                 (braid X Z) ⊗₁ cid {Y})
+               ≈ associator.to {X} {Y} {Z}        ⇒⟨ (X ⊗₀ Y) ⊗₀ Z ⟩
+                 (braid (X ⊗₀ Y) Z               ⇒⟨ Z ⊗₀ X ⊗₀ Y ⟩
+                 associator.to {Z} {X} {Y})
+               ⟩
+    hexagon₂ X Y Z = Iso-≈ (hexagon₁ Z X Y) (Iso-∘ (Iso-∘
+                       (_≅_.iso ((braid-≅ Z X) ⊗ᵢ ≅.refl))
+                       (hid-iso (⊕-assoc X Z Y)))
+                       (_≅_.iso (≅.refl ⊗ᵢ (braid-≅ Z Y)))
+                     ) (Iso-∘ (Iso-∘
+                       (hid-iso (⊕-assoc Z X Y))
+                       (_≅_.iso (braid-≅ Z (X ⊗₀ Y))))
+                       (hid-iso (⊕-assoc X Y Z))
+                     )

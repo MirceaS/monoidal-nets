@@ -58,30 +58,21 @@ module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
       unitorˡ = record
         { from = hid unitl
         ; to   = hid (sym unitl)
-        ; iso  = record
-          { isoˡ = hid-symˡ unitl
-          ; isoʳ = hid-symʳ unitl
-          }
+        ; iso  = hid-iso unitl
         }
 
       unitorʳ : X ⊗₀ unit ≅ X
       unitorʳ = record
         { from = hid unitr
         ; to   = hid (sym unitr)
-        ; iso  = record
-          { isoˡ = hid-symˡ unitr
-          ; isoʳ = hid-symʳ unitr
-          }
+        ; iso  = hid-iso unitr
         }
 
       associator : (X ⊗₀ Y) ⊗₀ Z ≅ X ⊗₀ (Y ⊗₀ Z)
       associator = record
         { from = hid assoc
         ; to   = hid (sym assoc)
-        ; iso  = record
-          { isoˡ = hid-symˡ assoc
-          ; isoʳ = hid-symʳ assoc
-          }
+        ; iso  = hid-iso assoc
         }
           
       module unitorˡ {X} = _≅_ (unitorˡ {X = X})

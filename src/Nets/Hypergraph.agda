@@ -52,21 +52,15 @@ module Core {l : Level} where
     field
       E : List VLabel → List VLabel → Set l
 
-    Edge : Set (ℓₜ ⊔ l)
-    Edge = Σ₂ (List VLabel) (List VLabel) E
-
-    -- input of the edge (s for source)
-    s : Edge → List VLabel
-    s = proj₁
-
-    -- output of the edge (t for target)
-    t : Edge → List VLabel
-    t = proj₁ ∘ proj₂
+    -- to be accessed from the outside when the input or
+    -- output are not so easy to deduce
+    inp = input
+    oup = output
 
     -- type representing the ports that arrows go into
-    in-index  = (Fin (len output)) ⊎ (Σ Edge (Fin ∘ len ∘ s))
+    in-index  = (Fin (len output)) ⊎ (Σ (Σ₂ _ _ E) (Fin ∘ len ∘ s))
     -- type representing the ports that arrows go out of
-    out-index = (Fin (len input))  ⊎ (Σ Edge (Fin ∘ len ∘ t))
+    out-index = (Fin (len input))  ⊎ (Σ (Σ₂ _ _ E) (Fin ∘ len ∘ t))
 
     in-lookup  : in-index  → VLabel
     in-lookup  = [ lookup (vec-of-list output) , (λ {((s , _ , e) , i) → lookup (vec-of-list s) i})]′
@@ -88,11 +82,11 @@ module Core {l : Level} where
       o : ∀ {input output} → E input output → ELabel {input} {output}
 
     ↑ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
-        Σ Edge (Fin ∘ len ∘ s) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ proj₁)
+        Σ (Σ₂ _ _ E) (Fin ∘ len ∘ s) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ s)
     ↑ f ((s , t , e) , i) = ((s , t , f e) , i)
 
     ↑′ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
-        Σ Edge (Fin ∘ len ∘ t) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ proj₁ ∘ proj₂)
+        Σ (Σ₂ _ _ E) (Fin ∘ len ∘ t) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ t)
     ↑′ f ((s , t , e) , i) = ((s , t , f e) , i)
 
 
@@ -123,7 +117,7 @@ module Core {l : Level} where
       --                RHS.conns← (α-in-index i) ≡ α-out-index (LHS.conns← i)
 
   -- the homogenous version of the hypergraph isomorphism
-  _≋_ : ∀ {A B : List VLabel} → Rel (Hypergraph A B) (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ)
+  _≋_ : ∀ {A B} → Rel (Hypergraph A B) (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ)
   _≋_ = _≋[ refl ][ refl ]_
 
   module _≋_ = _≋[_][_]_
@@ -350,7 +344,7 @@ module Core {l : Level} where
 
   -- homogenous hypergraph composition
   _⊚_ : ∀ {A B C} → Hypergraph B C → Hypergraph A B → Hypergraph A C
-  f ⊚ g = f ⊚[ refl ] g
+  _⊚_ = _⊚[ refl ]_
 
   ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → {f : Hypergraph C D} → {BC : B ≡ C} → {g : Hypergraph A B} → f ⊚[ BC ] g ≡ f ⊚ (subst (Hypergraph A) BC g)
   ⊚[]≡⊚ {BC = refl} = refl
@@ -374,17 +368,17 @@ module Core {l : Level} where
       E input output = (AB.E input output) ⊎ (CD.E input output)
 
       conns→ : _
-      conns→ (inj₁ i) = [ ((Sum.map (inject+ (len D)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j})) ∘ AB.conns→ ∘ inj₁)
-                         , ((Sum.map (raise   (len B)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j})) ∘ CD.conns→ ∘ inj₁)
+      conns→ (inj₁ i) = [ ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→ ∘ inj₁)
+                         , ((Sum.map (raise   (len B)) (CD.↑ inj₂)) ∘ CD.conns→ ∘ inj₁)
                          ]′ (splitAt (len A) i)
-      conns→ (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len D)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns→ (inj₂ ((_ , _ , e) , i)))
-      conns→ (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len B)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns→ (inj₂ ((_ , _ , e) , i)))
+      conns→ (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len D)) (AB.↑ inj₁) (AB.conns→ (inj₂ ((_ , _ , e) , i)))
+      conns→ (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len B)) (CD.↑ inj₂) (CD.conns→ (inj₂ ((_ , _ , e) , i)))
       conns← : _
-      conns← (inj₁ i) = [ ((Sum.map (inject+ (len C)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j})) ∘ AB.conns← ∘ inj₁)
-                         , ((Sum.map (raise   (len A)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j})) ∘ CD.conns← ∘ inj₁)
+      conns← (inj₁ i) = [ ((Sum.map (inject+ (len C)) (AB.↑′ inj₁)) ∘ AB.conns← ∘ inj₁)
+                         , ((Sum.map (raise   (len A)) (CD.↑′ inj₂)) ∘ CD.conns← ∘ inj₁)
                          ]′ (splitAt (len B) i)
-      conns← (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len C)) (λ {((_ , _ , f) , j) → (_ , _ , inj₁ f) , j}) (AB.conns← (inj₂ ((_ , _ , e) , i)))
-      conns← (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len A)) (λ {((_ , _ , f) , j) → (_ , _ , inj₂ f) , j}) (CD.conns← (inj₂ ((_ , _ , e) , i)))
+      conns← (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len C)) (AB.↑′ inj₁) (AB.conns← (inj₂ ((_ , _ , e) , i)))
+      conns← (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len A)) (CD.↑′ inj₂) (CD.conns← (inj₂ ((_ , _ , e) , i)))
 
       type-match : _
       type-match = type-match'
@@ -449,14 +443,14 @@ module Core {l : Level} where
           bijection₁ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ] with (AB.conns← (inj₁ i₁)) | (inspect AB.conns← (inj₁ i₁))
           bijection₁ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₁ j) | [ i=j ]
             rewrite splitAt-inject+ (len A) (len C) j = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ AB.bijection (inj₁ i₁)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₁ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len B) (len D) i) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₁ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ AB.bijection (inj₁ i₁)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₁ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len B) (len D) i) ⟩
@@ -465,14 +459,14 @@ module Core {l : Level} where
           bijection₁ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ] with (CD.conns← (inj₁ i₂)) | (inspect CD.conns← (inj₁ i₂))
           bijection₁ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₁ j) | [ i=j ]
             rewrite splitAt-raise (len A) (len C) j = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (CD.↑ inj₂)) ∘ CD.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ CD.bijection (inj₁ i₂)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₂ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len B) (len D) i) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₁ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (CD.↑ inj₂)) ∘ CD.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ CD.bijection (inj₁ i₂)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₂ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len B) (len D) i) ⟩
@@ -481,24 +475,24 @@ module Core {l : Level} where
           bijection₁ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns← (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns← (inj₂ ((_ , _ , e) , i)))
           bijection₁ (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i=j ]
             rewrite splitAt-inject+ (len A) (len C) j = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ AB.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₁ (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ AB.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₁ (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns← (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns← (inj₂ ((_ , _ , e) , i)))
           bijection₁ (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) | [ i=j ]
             rewrite splitAt-raise (len A) (len C) j = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (CD.↑ inj₂)) ∘ CD.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ CD.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₁ (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns→) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len B)) (CD.↑ inj₂)) ∘ CD.conns→) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₁ CD.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
@@ -508,14 +502,14 @@ module Core {l : Level} where
           bijection₂ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ] with (AB.conns→ (inj₁ i₁)) | (inspect AB.conns→ (inj₁ i₁))
           bijection₂ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₁ j) | [ i=j ]
             rewrite splitAt-inject+ (len B) (len D) j = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (AB.↑′ inj₁)) ∘ AB.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ AB.bijection (inj₁ i₁)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₁ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len A) (len C) i) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₂ (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (AB.↑′ inj₁)) ∘ AB.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ AB.bijection (inj₁ i₁)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₁ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len A) (len C) i) ⟩
@@ -524,14 +518,14 @@ module Core {l : Level} where
           bijection₂ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ] with (CD.conns→ (inj₁ i₂)) | (inspect CD.conns→ (inj₁ i₂))
           bijection₂ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₁ j) | [ i=j ]
             rewrite splitAt-raise (len B) (len D) j = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (CD.↑′ inj₂)) ∘ CD.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ CD.bijection (inj₁ i₂)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₂ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len A) (len C) i) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₂ (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (CD.↑′ inj₂)) ∘ CD.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ CD.bijection (inj₁ i₂)) ⟩
             _ ≡˘⟨ cong (inj₁ ∘ [ _ , _ ]′) i=i₂ ⟩
             _ ≡⟨ cong inj₁ (inject+-raise-splitAt (len A) (len C) i) ⟩
@@ -540,24 +534,24 @@ module Core {l : Level} where
           bijection₂ (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
           bijection₂ (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i=j ]
             rewrite splitAt-inject+ (len B) (len D) j = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (AB.↑′ inj₁)) ∘ AB.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ AB.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₂ (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₁ f) , j })) ∘ AB.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (inject+ (len C)) (AB.↑′ inj₁)) ∘ AB.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ AB.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₂ (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
           bijection₂ (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) | [ i=j ]
             rewrite splitAt-raise (len B) (len D) j = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (CD.↑′ inj₂)) ∘ CD.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ CD.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
           bijection₂ (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ (_ , j)) | [ i=j ] = begin
-            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (λ { ((_ , _ , f) , j) → (_ , _ , inj₂ f) , j })) ∘ CD.conns←) i=j ⟩
+            _ ≡˘⟨ cong ((Sum.map (raise (len A)) (CD.↑′ inj₂)) ∘ CD.conns←) i=j ⟩
             _ ≡⟨ cong (Sum.map _ _) (proj₂ CD.bijection (inj₂ ((_ , _ , e) , i))) ⟩
             _ ∎
             where open ≡-Reasoning
@@ -569,7 +563,7 @@ module Core {l : Level} where
 
     open Hypergraph hypergraph public
 
-    _≲_ : Rel Edge _
+    _≲_ : Rel (Σ₂ _ _ E) _
     e₁ ≲ e₂ = ∃ λ i₁ → ∃ λ i₂ → conns→ (inj₂ (e₁ , i₁)) ≡ inj₂ (e₂ , i₂)
 
     field

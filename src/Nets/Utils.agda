@@ -11,6 +11,20 @@ open import Function using (id ; _∘_)
 
 module Nets.Utils where
 
+-- general utilities
+Σ₂ : ∀ {a} {b} {c} (A : Set a) (B : Set b)
+     (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
+Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
+
+
+-- selectors for the source and target of abstract Edges
+s : ∀ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} → Σ₂ S T E → S
+s = proj₁
+
+t : ∀ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} → Σ₂ S T E → T
+t = proj₁ ∘ proj₂
+
+
 -- convinient way to represent lists as Vectors along with their size
 List : ∀ {l} → Set l → Set l
 List A = Σ ℕ (Vec A)
@@ -32,16 +46,9 @@ n * = n , replicate tt
 3* = 3 *
 4* = 4 *
 
--- general utilities
-Σ₂ : ∀ {a} {b} {c} (A : Set a) (B : Set b)
-     (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
-Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
-
-
 -- list concatenation
 _⊕_ : ∀ {l} {A : Set l} → (xs ys : List A) → List A
 _⊕_ = zip _+_ _++_
-
 
 -- some properties of list concatenation
 ⊕-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ⊕ (zero , []) ≡ X

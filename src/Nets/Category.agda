@@ -42,6 +42,7 @@ Hypergraph-Category = record
   ; sym-assoc = ≋-equiv.sym ⊚-assoc
   ; identityˡ  = ⊚-identityˡ
   ; identityʳ  = ⊚-identityʳ
+  ; identity² = ⊚-identityˡ
   ; equiv     = ≋-equiv
   ; ∘-resp-≈  = ⊚-resp-≋
   }
