@@ -105,9 +105,9 @@ module Core {l : Level} where
       obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
 
     α-in-index :  LHS.in-index  → RHS.in-index
-    α-in-index  = Sum.map (subst (Fin ∘ len) B≡B′) (LHS.↑ α)
+    α-in-index  = Sum.map (subF B≡B′) (LHS.↑ α)
     α-out-index : LHS.out-index → RHS.out-index
-    α-out-index = Sum.map (subst (Fin ∘ len) A≡A′) (LHS.↑′ α)
+    α-out-index = Sum.map (subF A≡A′) (LHS.↑′ α)
 
     field
       conns→-resp : (i : LHS.out-index) →
@@ -141,8 +141,8 @@ module Core {l : Level} where
       module AB = Hypergraph AB
       module CD = Hypergraph CD
 
-      sub = subst (Fin ∘ len) BC
-      sub′ = subst (Fin ∘ len) (sym BC)
+      sub = subF BC
+      sub′ = subF (sym BC)
 
       lemma : ∀ j → lookup (vec-of-list B) j ≡ lookup (vec-of-list C) (sub j)
       lemma _ rewrite BC = refl

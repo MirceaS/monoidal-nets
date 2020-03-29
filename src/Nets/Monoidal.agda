@@ -192,7 +192,7 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
         ; conns→-resp = let open ≡-Reasoning in λ where
             (inj₁ i) → begin
               _ ≡˘⟨ cong inj₁ (inject+-raise-splitAt (len (proj₁ AB)) (len (proj₂ AB)) i) ⟩
-              _ ≡⟨ cong (Sum.map₂ _) ([,]-∘-distr {f = inj₁} (splitAt (len (proj₁ AB)) i)) ⟩
+              _ ≡⟨ cong (Sum.map₂ _) ([,]-∘-distr inj₁ (splitAt (len (proj₁ AB)) i)) ⟩
               _ ∎
             (inj₂ ((_ , _ , (inj₁ ())) , _))
         }
@@ -256,19 +256,19 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
         α (inj₁ e) = e
 
         α-in-index :  LHS.in-index  → RHS.in-index
-        α-in-index  = Sum.map (subst (Fin ∘ len) (⊕-identityʳ B)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-in-index  = Sum.map (subF (⊕-identityʳ B)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         α-out-index : LHS.out-index → RHS.out-index
-        α-out-index = Sum.map (subst (Fin ∘ len) (⊕-identityʳ A)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-out-index = Sum.map (subF (⊕-identityʳ A)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
 
         lemma : ∀ {A : List VLabel} → (i : Fin ((len A) + zero)) →
-                splitAt (len A) i ≡ inj₁ (subst (Fin ∘ len) (⊕-identityʳ A) i)
+                splitAt (len A) i ≡ inj₁ (subF (⊕-identityʳ A) i)
         lemma {suc l , A ∷ AS} fzero = cong inj₁ (0-subst (⊕-identityʳ (l , AS)))
         lemma {suc l , A ∷ AS} (fsuc i) = begin
           _ ≡⟨ cong (Sum.map fsuc id) (lemma {l , AS} i) ⟩
           _ ≡⟨ cong inj₁ (fsuc-subst (⊕-identityʳ (l , AS)) i) ⟩
           _ ∎
 
-        lemma2 : ∀ {B : List VLabel} → (i : Fin (len B)) → i ≡ subst (Fin ∘ len) (⊕-identityʳ B) (inject+ zero i)
+        lemma2 : ∀ {B : List VLabel} → (i : Fin (len B)) → i ≡ subF (⊕-identityʳ B) (inject+ zero i)
         lemma2 {B} i = inj₁-injective (begin
           _ ≡˘⟨ splitAt-inject+ (len B) zero i ⟩
           _ ≡⟨ lemma ((inject+ zero) i) ⟩
@@ -327,27 +327,27 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
         α (inj₂ e) = inj₂ (inj₂ e)
 
         α-in-index :  LHS.in-index  → RHS.in-index
-        α-in-index  = Sum.map (subst (Fin ∘ len) (⊕-assoc B B′ B′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-in-index  = Sum.map (subF (⊕-assoc B B′ B′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         α-out-index : LHS.out-index → RHS.out-index
-        α-out-index = Sum.map (subst (Fin ∘ len) (⊕-assoc A A′ A′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-out-index = Sum.map (subF (⊕-assoc A A′ A′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
 
         lemma : ∀ {l} {S : Set l} {A B C} {f : Fin (len A) → S} {g : Fin (len B) → S} {h : Fin (len C) → S} →
                 (i : Fin ((len A + len B) + len C)) →
                 [ [ f , g ]′ ∘ (splitAt (len A)) , h ]′ (splitAt (len A + len B) i) ≡
-                [ f , [ g , h ]′ ∘ (splitAt (len B)) ]′ (splitAt (len A) (subst (Fin ∘ len) (⊕-assoc {A = VLabel} A B C) i))
+                [ f , [ g , h ]′ ∘ (splitAt (len B)) ]′ (splitAt (len A) (subF (⊕-assoc {A = VLabel} A B C) i))
         lemma {A = zero , []} _ = refl
         lemma {A = suc l , A ∷ AS} fzero = cong ([ _ , _ ]′ ∘ (splitAt (suc l))) (0-subst (⊕-assoc (l , AS) _ _))
         lemma {A = suc l , A ∷ AS} {B} {C} {f} {g} {h} (fsuc i) = begin
           _ ≡⟨ [,]-map-commute (splitAt (l + len B) i) ⟩
           _ ≡⟨ [,]-cong ([,]-map-commute ∘ (splitAt l)) (λ _ → refl) (splitAt (l + len B) i) ⟩
           _ ≡⟨ lemma {A = l , AS} {B} {C} {f ∘ fsuc} {g} {h} i ⟩
-          _ ≡˘⟨ [,]-map-commute (splitAt l (subst (Fin ∘ len) (⊕-assoc (l , AS) B C) i)) ⟩
+          _ ≡˘⟨ [,]-map-commute (splitAt l (subF (⊕-assoc (l , AS) B C) i)) ⟩
           _ ≡⟨ cong ([ _ , _ ]′ ∘ (splitAt (suc l))) (fsuc-subst (⊕-assoc (l , AS) B C) i) ⟩
           _ ∎
 
         inject+-inject+ : ∀ {A B C : List VLabel} → (i : Fin (len A)) →
                           inject+ ((len B) + (len C)) i ≡
-                          subst (Fin ∘ len) (⊕-assoc A B C) (inject+ (len C) (inject+ (len B) i))
+                          subF (⊕-assoc A B C) (inject+ (len C) (inject+ (len B) i))
         inject+-inject+ {suc l , _ ∷ AS} fzero = 0-subst (⊕-assoc (l , AS) _ _)
         inject+-inject+ {suc l , _ ∷ AS} (fsuc i) = begin
           _ ≡⟨ cong fsuc (inject+-inject+ {l , AS} i) ⟩
@@ -356,7 +356,7 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
 
         raise-inject+ : ∀ {A B C : List VLabel} → (i : Fin (len B)) →
                         raise (len A) (inject+ (len C) i) ≡
-                        subst (Fin ∘ len) (⊕-assoc A B C) (inject+ (len C) (raise (len A) i))
+                        subF (⊕-assoc A B C) (inject+ (len C) (raise (len A) i))
         raise-inject+ {zero , []} i = refl
         raise-inject+ {suc l , _ ∷ AS} {B} {C} i = begin
           _ ≡⟨ cong fsuc (raise-inject+ {l , AS} {B} {C} i) ⟩
@@ -365,7 +365,7 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
 
         raise-raise : ∀ {A B C : List VLabel} → (i : Fin (len C)) →
                       raise (len A) (raise (len B) i) ≡
-                      subst (Fin ∘ len) (⊕-assoc A B C) (raise ((len A) + (len B)) i)
+                      subF (⊕-assoc A B C) (raise ((len A) + (len B)) i)
         raise-raise {zero , []} i = refl
         raise-raise {suc l , A ∷ AS} {B} {C} i = begin
           _ ≡⟨ cong fsuc (raise-raise {l , AS} {B} {C} i) ⟩
@@ -374,8 +374,8 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
 
         conns→-resp : (i : LHS.out-index) → RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)
         conns→-resp (inj₁ i) = begin
-          _ ≡⟨ [,]-cong (λ _ → refl) (([,]-∘-distr {f = Sum.map _ _}) ∘ (splitAt (len A′)))
-               (splitAt (len A) (subst (Fin ∘ len) (⊕-assoc A A′ A′′) i)) ⟩
+          _ ≡⟨ [,]-cong (λ _ → refl) (([,]-∘-distr (Sum.map _ _)) ∘ (splitAt (len A′)))
+               (splitAt (len A) (subF (⊕-assoc A A′ A′′) i)) ⟩
           _ ≡˘⟨ lemma {f = (Sum.map _ _) ∘ f.conns→ ∘ inj₁} i ⟩
           _ ≡⟨ [,]-cong (λ x → begin
             _ ≡⟨ [,]-cong (λ y → begin
@@ -386,14 +386,14 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
               _ ≡⟨ map-cong (raise-inject+ {B}) (λ _ → refl) (g.conns→ (inj₁ y)) ⟩
               _ ≡˘⟨ map-commute (g.conns→ (inj₁ y)) ⟩
               _ ∎) (splitAt (len A) x) ⟩
-            _ ≡˘⟨ [,]-∘-distr {f = Sum.map _ _} (splitAt (len A) x) ⟩
+            _ ≡˘⟨ [,]-∘-distr (Sum.map _ _) (splitAt (len A) x) ⟩
             _ ≡˘⟨ map-commute ([ _ , _ ]′ (splitAt (len A) x)) ⟩
             _ ∎) (λ x → begin
             _ ≡⟨ map-commute (h.conns→ (inj₁ x)) ⟩
             _ ≡⟨ map-cong (raise-raise {B}) (λ _ → refl) (h.conns→ (inj₁ x)) ⟩
             _ ≡˘⟨ map-commute (h.conns→ (inj₁ x)) ⟩
             _ ∎) (splitAt (len A + len A′) i) ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = α-in-index} (splitAt (len A + len A′) i) ⟩
+          _ ≡˘⟨ [,]-∘-distr α-in-index (splitAt (len A + len A′) i) ⟩
           _ ∎
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i)) with f.conns→ (inj₂ ((_ , _ , e) , i))
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j) = cong inj₁ (inject+-inject+ {B} j)

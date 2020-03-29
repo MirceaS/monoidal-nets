@@ -2,7 +2,7 @@
 
 open import Level
 open import Data.Product as Prod using (Σ; _,_; proj₁; proj₂; uncurry)
-open import Data.Sum as Sum using (inj₁; inj₂; [_,_])
+open import Data.Sum as Sum using (_⊎_; inj₁; inj₂; [_,_]; map; map₁; map₂)
 open import Data.Sum.Properties
 open import Data.Nat using (ℕ; _+_)
 open import Data.Vec using (Vec; _++_; lookup)
@@ -84,28 +84,28 @@ Hypergraph-Symmetric = record
         type-match (inj₁ i) = begin
           _ ≡⟨ lookup-splitAt a va vb i ⟩
           _ ≡˘⟨ [,]-cong (lookup-++ʳ vb va) (lookup-++ˡ vb va) (splitAt a i) ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = lookup (vb ++ va)} (splitAt a i) ⟩
+          _ ≡˘⟨ [,]-∘-distr (lookup (vb ++ va)) (splitAt a i) ⟩
           _ ∎
           where open Setoid-Reasoning VLabel-setoid
 
         bijection₁ : _
         bijection₁ (inj₁ i) = cong inj₁ (begin
-          _ ≡⟨ cong [ _ , _ ] ([,]-∘-distr {f = splitAt a} (splitAt b i)) ⟩
+          _ ≡⟨ cong [ _ , _ ] ([,]-∘-distr (splitAt a) (splitAt b i)) ⟩
           _ ≡⟨ cong [ _ , _ ] ([,]-cong (splitAt-raise a b) (splitAt-inject+ a b) (splitAt b i)) ⟩
-          _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt b i) ⟩
+          _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt b i) ⟩
           _ ≡⟨ inject+-raise-splitAt b a i ⟩
           _ ∎)
           where open ≡-Reasoning
 
         bijection₂ : _
         bijection₂ (inj₁ i) = cong inj₁ (begin
-          _ ≡⟨ cong [ _ , _ ] ([,]-∘-distr {f = splitAt b} (splitAt a i)) ⟩
+          _ ≡⟨ cong [ _ , _ ] ([,]-∘-distr (splitAt b) (splitAt a i)) ⟩
           _ ≡⟨ cong [ _ , _ ] ([,]-cong (splitAt-raise b a) (splitAt-inject+ b a) (splitAt a i)) ⟩
-          _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt a i) ⟩
+          _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt a i) ⟩
           _ ≡⟨ inject+-raise-splitAt a b i ⟩
           _ ∎)
           where open ≡-Reasoning
-        
+
     braid-comm : ∀ {A B C D} → (f : A ⇒ B) → (g : C ⇒ D) → CommutativeSquare (f ⊗₁ g) (braid A C) (braid B D) (g ⊗₁ f)
     braid-comm {A} {B} {C} {D} f g = record
       { α = α
@@ -143,39 +143,39 @@ Hypergraph-Symmetric = record
         α (inj₁ (inj₂ e)) = inj₂ (inj₁ e)
 
         α-in-index :  LHS.in-index  → RHS.in-index
-        α-in-index  = Sum.map₂ (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-in-index  = map₂ (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         α-out-index : LHS.out-index → RHS.out-index
-        α-out-index = Sum.map₂ (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-out-index = map₂ (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         
         conns→-resp : (i : LHS.out-index) →
                        RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)
         conns→-resp (inj₁ i) = begin
-          _ ≡⟨ cong ((Sum.map₂ _) ∘ [ _ , _ ]) ([,]-∘-distr {f = splitAt c} (splitAt a i)) ⟩
-          _ ≡⟨ cong ((Sum.map₂ _) ∘ [ _ , _ ]) ([,]-cong (splitAt-raise c a) (splitAt-inject+ c a) (splitAt a i)) ⟩
-          _ ≡⟨ cong (Sum.map₂ _) ([,]-∘-distr {f = [ _ , _ ]} (splitAt a i)) ⟩
-          _ ≡⟨ [,]-∘-distr {f = Sum.map₂ _} (splitAt a i) ⟩
+          _ ≡⟨ cong ((map₂ _) ∘ [ _ , _ ]) ([,]-∘-distr (splitAt c) (splitAt a i)) ⟩
+          _ ≡⟨ cong ((map₂ _) ∘ [ _ , _ ]) ([,]-cong (splitAt-raise c a) (splitAt-inject+ c a) (splitAt a i)) ⟩
+          _ ≡⟨ cong (map₂ _) ([,]-∘-distr [ _ , _ ] (splitAt a i)) ⟩
+          _ ≡⟨ [,]-∘-distr (map₂ _) (splitAt a i) ⟩
           _ ≡⟨ [,]-cong (λ x → begin
             _ ≡⟨ map-commute (f.conns→ (inj₁ x)) ⟩
             _ ≡˘⟨ [,]-cong ((cong (inj₁ ∘ [ _ , _ ])) ∘ (splitAt-inject+ b d)) (λ _ → refl) (f.conns→ (inj₁ x)) ⟩
-            _ ≡˘⟨ [,]-∘-distr {f = Sum.map₂ _} (f.conns→ (inj₁ x)) ⟩
+            _ ≡˘⟨ [,]-∘-distr (map₂ _) (f.conns→ (inj₁ x)) ⟩
             _ ∎) (λ x → begin
             _ ≡⟨ map-commute (g.conns→ (inj₁ x)) ⟩
             _ ≡˘⟨ [,]-cong ((cong (inj₁ ∘ [ _ , _ ])) ∘ (splitAt-raise b d)) (λ _ → refl) (g.conns→ (inj₁ x)) ⟩
-            _ ≡˘⟨ [,]-∘-distr {f = Sum.map₂ _} (g.conns→ (inj₁ x)) ⟩
+            _ ≡˘⟨ [,]-∘-distr (map₂ _) (g.conns→ (inj₁ x)) ⟩
             _ ∎) (splitAt a i) ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = Sum.map₂ _} (splitAt a i) ⟩
-          _ ≡˘⟨ cong (Sum.map₂ _) ([,]-cong ([,]-map-commute ∘ f.conns→ ∘ inj₁) ([,]-map-commute ∘ g.conns→ ∘ inj₁) (splitAt a i)) ⟩
-          _ ≡˘⟨ cong (Sum.map₂ _) ([,]-∘-distr {f = [ _ , _ ]} (splitAt a i)) ⟩
+          _ ≡˘⟨ [,]-∘-distr (map₂ _) (splitAt a i) ⟩
+          _ ≡˘⟨ cong (map₂ _) ([,]-cong ([,]-map-commute ∘ f.conns→ ∘ inj₁) ([,]-map-commute ∘ g.conns→ ∘ inj₁) (splitAt a i)) ⟩
+          _ ≡˘⟨ cong (map₂ _) ([,]-∘-distr [ _ , _ ] (splitAt a i)) ⟩
           _ ∎
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i)) = begin
           _ ≡⟨ map-commute (f.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = α-in-index} (f.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
+          _ ≡˘⟨ [,]-∘-distr α-in-index (f.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
           _ ≡˘⟨ cong α-in-index ([,]-cong ((cong (inj₁ ∘ [ _ , _ ])) ∘ (splitAt-inject+ b d)) (λ _ → refl) (f.conns→ (inj₂ ((_ , _ , e) , i)))) ⟩
           _ ≡˘⟨ cong α-in-index ([,]-map-commute (f.conns→ (inj₂ ((_ , _ , e) , i)))) ⟩
           _ ∎
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i)) = begin
           _ ≡⟨ map-commute (g.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = α-in-index} (g.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
+          _ ≡˘⟨ [,]-∘-distr α-in-index (g.conns→ (inj₂ ((_ , _ , e) , i))) ⟩
           _ ≡˘⟨ cong α-in-index ([,]-cong ((cong (inj₁ ∘ [ _ , _ ])) ∘ (splitAt-raise b d)) (λ _ → refl) (g.conns→ (inj₂ ((_ , _ , e) , i)))) ⟩
           _ ≡˘⟨ cong α-in-index ([,]-map-commute (g.conns→ (inj₂ ((_ , _ , e) , i)))) ⟩
           _ ∎
@@ -188,9 +188,9 @@ Hypergraph-Symmetric = record
       ; obj-resp = λ {(inj₁ ())}
       ; conns→-resp = λ {(inj₁ i) → cong inj₁ (begin
           _ ≡˘⟨ inject+-raise-splitAt a b i ⟩
-          _ ≡˘⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt a i) ⟩
+          _ ≡˘⟨ [,]-∘-distr [ _ , _ ] (splitAt a i) ⟩
           _ ≡˘⟨ cong [ _ , _ ] ([,]-cong (splitAt-raise b a) (splitAt-inject+ b a) (splitAt a i)) ⟩
-          _ ≡˘⟨ cong [ _ , _ ] ([,]-∘-distr {f = splitAt b} (splitAt a i)) ⟩
+          _ ≡˘⟨ cong [ _ , _ ] ([,]-∘-distr (splitAt b) (splitAt a i)) ⟩
           _ ∎)
           ; (inj₂ ((_ , _ , inj₁ ()) , _))}
       }
@@ -232,8 +232,19 @@ Hypergraph-Symmetric = record
         g = (braid X Y) ⊗₁ cid {Z}
         h = braid X (Y ⊗₀ Z)
 
+        x = len X
+        y = len Y
+        z = len Z
+
+        sub = subF (sym (⊕-assoc X Y Z))
+
+        T1 : Fin y ⊎ Fin (x + z) → _
+        T1 = [ inject+ (z + x) , (raise y) ∘ [ raise z , inject+ x ] ∘ (splitAt x) ]
+        T2 = (splitAt y) ∘ (subF (⊕-assoc Y X Z)) ∘ (inject+ z) ∘ [ raise y , inject+ x ] ∘ (splitAt x)
+        T3 = (splitAt y) ∘ (subF (⊕-assoc Y X Z)) ∘ (raise (y + x))
+
         hex : h ≋[ sym (⊕-assoc X Y Z) ][ ⊕-assoc Y Z X ] f ⊚[ ⊕-assoc Y X Z ] g
-        hex = record
+        hex = let open ≡-Reasoning in record
           { α = λ ()
           ; α′ = λ
             { (inj₁ (inj₁ ()))
@@ -244,51 +255,39 @@ Hypergraph-Symmetric = record
             ; (inj₂ (inj₁ ()))
             }) , (λ ())
           ; obj-resp = λ ()
-          ; conns→-resp = λ {(inj₁ i) → conns→-resp i} -- begin
-              -- _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt (x + y) (sub₁ i)) ⟩
-              -- _ ≡⟨ {!!} ⟩
-              -- _ ∎}
+          ; conns→-resp = λ {(inj₁ i) → begin
+              _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt (x + y) (sub i)) ⟩
+              _ ≡˘⟨ [,]-cong ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T2) ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T3) (splitAt (x + y) (sub i)) ⟩
+              _ ≡˘⟨ [,]-∘-distr inj₁ (splitAt (x + y) (sub i)) ⟩
+              _ ≡⟨ cong inj₁ (begin
+                _ ≡⟨ cong [ _ , _ ] (splitAt-sym-assoc {X = X} {Y} {Z} i) ⟩
+                _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt x i) ⟩
+                _ ≡⟨ [,]-cong (λ j → begin
+                  _ ≡⟨ cong (T1 ∘ (splitAt y) ∘ (subF (⊕-assoc Y X Z)) ∘ (inject+ z) ∘ [ raise y , inject+ x ]) (splitAt-inject+ x y j) ⟩
+                  _ ≡⟨ cong T1 (splitAt-assoc (inject+ z (raise y j))) ⟩
+                  _ ≡⟨ cong ([ _ , _ ] ∘ [ _ , _ ]) (splitAt-inject+ (y + x) z (raise y j)) ⟩
+                  _ ≡⟨ [,]-map-commute (splitAt y (raise y j)) ⟩
+                  _ ≡⟨ cong [ _ , _ ] (splitAt-raise y _ j) ⟩
+                  _ ≡⟨ cong ((raise y) ∘ [ _ , _ ]) (splitAt-inject+ x z j) ⟩
+                  _ ∎) (λ j → begin
+                  _ ≡⟨ [,]-map-commute (splitAt y j) ⟩
+                  _ ≡⟨ [,]-cong (λ k → begin
+                    _ ≡⟨ cong (T1 ∘ (splitAt y) ∘ (subF (⊕-assoc Y X Z)) ∘ (inject+ z) ∘ [ _ , _ ]) (splitAt-raise x _ k) ⟩
+                    _ ≡⟨ cong T1 (splitAt-assoc (inject+ z (inject+ x k))) ⟩
+                    _ ≡⟨ cong (T1 ∘ [ _ , _ ]) (splitAt-inject+ (y + x) z (inject+ x k)) ⟩
+                    _ ≡⟨ cong (T1 ∘ (map₂ _)) (splitAt-inject+ y x k) ⟩
+                    _ ∎) (λ k → begin
+                    _ ≡⟨ cong T1 (splitAt-assoc (raise (y + x) k)) ⟩
+                    _ ≡⟨ cong (T1 ∘ [ _ , _ ]) (splitAt-raise (y + x) _ k) ⟩
+                    _ ≡⟨ cong ((raise y) ∘ [ _ , _ ]) (splitAt-raise x _ k) ⟩
+                    _ ∎) (splitAt y j) ⟩
+                  _ ∎) (splitAt x i) ⟩
+                _ ≡˘⟨ [,]-cong (assoc-raise {X = Y} {Z} {X}) (assoc-inject+ {X = Y} {Z} {X}) (splitAt x i) ⟩
+                _ ≡˘⟨ [,]-∘-distr (subF (⊕-assoc Y Z X)) (splitAt x i) ⟩
+                _ ∎) ⟩
+              _ ∎}
           }
-          -- [ (λ j → Sum.map₂ (f.↑ inj₂) (f.conns→ (inj₁ (subst (Fin ∘ len) (⊕-assoc Y X Z) j))))
-          -- , inj₂ ∘ (g.↑ inj₁) ]′
-          -- (g.conns→ (inj₁ (subst (Fin ∘ len) (⊕-assoc X Y Z) i)))
-          --
-          -- [ ((Sum.map (inject+ (len D)) (AB.↑ inj₁)) ∘ AB.conns→ ∘ inj₁)
-          --               , (inj₁ ∘ (raise (len B)))
-          --               ]′ (splitAt (len A) (subst (Fin ∘ len) (⊕-assoc X Y Z) i))
-          --
-          -- ≡
-          -- inj₁ (subst (Fin ∘ len) (⊕-assoc Y Z X) ([ raise (y + z) , inject+ x ] (splitAt x i)))
-          where
-            module f = Hypergraph f
-            module g = Hypergraph g
-            module h = Hypergraph h
-            module RHS = Hypergraph (f ⊚[ ⊕-assoc Y X Z ] g)
 
-            x = len X
-            y = len Y
-            z = len Z
-
-            open ≡-Reasoning
-
-            sub₁ = subst (Fin ∘ len) (sym (⊕-assoc X Y Z))
-            sub₂ = subst (Fin ∘ len) (⊕-assoc Y Z X)
-            sub₃ = subst (Fin ∘ len) (⊕-assoc Y X Z)
-
-            conns→-resp : (i : Fin (len h.inp)) →
-                           RHS.conns→ (inj₁ (subst (Fin ∘ len) (sym (⊕-assoc X Y Z)) i)) ≡
-                           inj₁ (subst (Fin ∘ len) (⊕-assoc Y Z X) ([ raise (y + z) , inject+ x ] (splitAt x i)))
-            conns→-resp i with (splitAt x i)
-            conns→-resp i    | inj₁ i₁ = begin
-              {- _ ≡⟨ [,]-cong (λ j → [,]-∘-distr {f = Sum.map₂ (RHS.↑ inj₂)} (splitAt y (sub₂ j)))
-                            (λ _ → refl) ([ inj₁ ∘ (inject+ z) ∘ [ _ , _ ] ∘ (splitAt x) , inj₁ ∘ (raise (y + x)) ] (splitAt (x + y) (sub₁ i))) ⟩ -}
-              {- _ ≡˘⟨ [,]-cong (λ j → [,]-∘-distr {f = inj₁} (splitAt y (sub₂ j)))
-                            (λ _ → refl) ([ _ , inj₁ ∘ (raise (y + x)) ] (splitAt (x + y) (sub₁ i))) ⟩ -}
-              -- _ ≡⟨ [,]-∘-distr {f = [ _ , _ ]} (splitAt (x + y) (sub₁ i)) ⟩
-              _ ≡⟨ {!!} ⟩
-              _ ∎
-
-            
 
     hexagon₂ : ∀ X Y Z →
                [ X ⊗₀ Y ⊗₀ Z ⇒ (Z ⊗₀ X) ⊗₀ Y ]⟨
@@ -308,3 +307,4 @@ Hypergraph-Symmetric = record
                        (_≅_.iso (braid-≅ Z (X ⊗₀ Y))))
                        (hid-iso (⊕-assoc X Y Z))
                      )
+
