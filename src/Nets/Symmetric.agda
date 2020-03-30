@@ -17,19 +17,16 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 
 open import Nets.Utils
 
-module Nets.Symmetric {ℓₜ ℓₜᵣ : Level}
-                      (VLabel-setoid : Setoid ℓₜ ℓₜᵣ)
+module Nets.Symmetric {ℓₜ : Level}
+                      (VLabel : Set ℓₜ)
                       {ℓₒ ℓₒᵣ : Level}
-                      (ELabel-setoid :
-                        List (Setoid.Carrier VLabel-setoid) →
-                        List (Setoid.Carrier VLabel-setoid) →
-                        Setoid ℓₒ ℓₒᵣ
-                      ) {l : Level} where
+                      (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
+                      {l : Level} where
 
-open import Nets.Hypergraph VLabel-setoid ELabel-setoid
+open import Nets.Hypergraph VLabel ELabel-setoid
 open Core {l} using (Hypergraph; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
-open import Nets.Category   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Category)
-open import Nets.Monoidal   VLabel-setoid ELabel-setoid {l} using (Hypergraph-Monoidal)
+open import Nets.Category   VLabel ELabel-setoid {l} using (Hypergraph-Category)
+open import Nets.Monoidal   VLabel ELabel-setoid {l} using (Hypergraph-Monoidal)
 import Nets.K-Utils Hypergraph-Category as K-Utils
 
 open import Categories.Morphism Hypergraph-Category using (_≅_; module ≅)
@@ -40,7 +37,7 @@ open import Categories.Category.Monoidal.Symmetric Hypergraph-Monoidal
 
 
 Hypergraph-Symmetric : Symmetric
-Hypergraph-Symmetric = symmetricHelper (record
+Hypergraph-Symmetric = symmetricHelper record
   { braiding = record
     { F⇒G = record
       { η = uncurry braid
@@ -59,7 +56,7 @@ Hypergraph-Symmetric = symmetricHelper (record
     }
   ; commutative = λ {X} {Y} → braid-iso Y X
   ; hexagon = λ {X} {Y} {Z} → hexagon X Y Z
-  })
+  }
   where
     open Hypergraph-Category renaming (_∘_ to _⊚_; id to cid)
     open Hypergraph-Monoidal
@@ -79,13 +76,14 @@ Hypergraph-Symmetric = symmetricHelper (record
         va = vec-of-list A
         vb = vec-of-list B
 
+        open ≡-Reasoning
+
         type-match : _
         type-match (inj₁ i) = begin
           _ ≡⟨ lookup-splitAt a va vb i ⟩
           _ ≡˘⟨ [,]-cong (lookup-++ʳ vb va) (lookup-++ˡ vb va) (splitAt a i) ⟩
           _ ≡˘⟨ [,]-∘-distr (lookup (vb ++ va)) (splitAt a i) ⟩
           _ ∎
-          where open Setoid-Reasoning VLabel-setoid
 
         bijection₁ : _
         bijection₁ (inj₁ i) = cong inj₁ (begin
@@ -94,7 +92,6 @@ Hypergraph-Symmetric = symmetricHelper (record
           _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt b i) ⟩
           _ ≡⟨ inject+-raise-splitAt b a i ⟩
           _ ∎)
-          where open ≡-Reasoning
 
         bijection₂ : _
         bijection₂ (inj₁ i) = cong inj₁ (begin
@@ -103,7 +100,6 @@ Hypergraph-Symmetric = symmetricHelper (record
           _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt a i) ⟩
           _ ≡⟨ inject+-raise-splitAt a b i ⟩
           _ ∎)
-          where open ≡-Reasoning
 
     braid-comm : ∀ {A B C D} → (f : A ⇒ B) → (g : C ⇒ D) → CommutativeSquare (f ⊗₁ g) (braid A C) (braid B D) (g ⊗₁ f)
     braid-comm {A} {B} {C} {D} f g = record

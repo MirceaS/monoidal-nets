@@ -14,35 +14,30 @@ open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
 open import Function using (_∘_ ; Inverseᵇ ; id)
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
+
 open import Categories.Category
 
 open import Nets.Utils
 
-module Nets.Category {ℓₜ ℓₜᵣ : Level}
-                     (VLabel-setoid : Setoid ℓₜ ℓₜᵣ)
+module Nets.Category {ℓₜ : Level} (VLabel : Set ℓₜ)
                      {ℓₒ ℓₒᵣ : Level}
-                     (ELabel-setoid :
-                       List(Setoid.Carrier VLabel-setoid) →
-                       List (Setoid.Carrier VLabel-setoid) →
-                       Setoid ℓₒ ℓₒᵣ
-                     ) {l : Level}
+                     (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
+                     {l : Level}
                      where
 
-open import Nets.Hypergraph VLabel-setoid ELabel-setoid
+open import Nets.Hypergraph VLabel ELabel-setoid
 open Core {l}
 
-Hypergraph-Category : Category ℓₜ ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ ⊔ ℓₒᵣ)
-Hypergraph-Category = record
+Hypergraph-Category : Category ℓₜ ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+Hypergraph-Category = categoryHelper record
   { Obj       = List VLabel
   ; _⇒_      = Hypergraph
   ; _≈_       = _≋_
   ; id        = ⊚-id
   ; _∘_       = _⊚_
   ; assoc     = ⊚-assoc
-  ; sym-assoc = ≋-equiv.sym ⊚-assoc
   ; identityˡ  = ⊚-identityˡ
   ; identityʳ  = ⊚-identityʳ
-  ; identity² = ⊚-identityˡ
   ; equiv     = ≋-equiv
   ; ∘-resp-≈  = ⊚-resp-≋
   }
@@ -114,7 +109,7 @@ Hypergraph-Category = record
       { E = λ _ _ → ⊥
       ; conns→ = λ {(inj₁ x) → inj₁ x}
       ; conns← = λ {(inj₁ x) → inj₁ x}
-      ; type-match = λ {(inj₁ _) → VLabel.refl}
+      ; type-match = λ {(inj₁ _) → refl}
       ; bijection = (λ {(inj₁ _) → refl}) ,
                      (λ {(inj₁ _) → refl})
       ; o = λ ()
@@ -353,7 +348,5 @@ Hypergraph-Category = record
           _ ≡⟨ cong (Sum.map₂ _) (fh.conns→-resp (inj₂ ((_ , _ , e) , i))) ⟩
           _ ≡⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) i→j ⟩
           _ ∎
-
-    module ≋-equiv {A} {B} = IsEquivalence (≋-equiv {A} {B})
 
 module Hypergraph-Category = Category Hypergraph-Category

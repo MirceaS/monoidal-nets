@@ -13,17 +13,14 @@ open import Categories.Morphism.HeterogeneousIdentity.Properties using (BF-hid)
 
 open import Nets.Utils
 
-module Nets.MonoidalHelper {ℓₜ ℓₜᵣ : Level} (VLabel-setoid : Setoid ℓₜ ℓₜᵣ)
+module Nets.MonoidalHelper {ℓₜ : Level} (VLabel : Set ℓₜ)
                            {ℓₒ ℓₒᵣ : Level}
-                           (ELabel-setoid :
-                             List (Setoid.Carrier VLabel-setoid) →
-                             List (Setoid.Carrier VLabel-setoid) →
-                             Setoid ℓₒ ℓₒᵣ
-                           ) {l : Level} where
+                           (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
+                           {l : Level} where
 
-open import Nets.Hypergraph VLabel-setoid ELabel-setoid
+open import Nets.Hypergraph VLabel ELabel-setoid
 open Core {l}
-open import Nets.Category   VLabel-setoid ELabel-setoid {l} renaming (Hypergraph-Category to HC)
+open import Nets.Category   VLabel ELabel-setoid {l} renaming (Hypergraph-Category to HC)
 open import Nets.K-Utils HC
 
 open import Categories.Morphism HC using (_≅_; module _≅_)

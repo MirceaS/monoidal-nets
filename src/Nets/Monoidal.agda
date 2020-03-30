@@ -19,18 +19,15 @@ open import Categories.Category.Monoidal using (Monoidal)
 
 open import Nets.Utils
 
-module Nets.Monoidal {ℓₜ ℓₜᵣ : Level} (VLabel-setoid : Setoid ℓₜ ℓₜᵣ)
+module Nets.Monoidal {ℓₜ : Level} (VLabel : Set ℓₜ)
                      {ℓₒ ℓₒᵣ : Level}
-                     (ELabel-setoid :
-                       List (Setoid.Carrier VLabel-setoid) →
-                       List (Setoid.Carrier VLabel-setoid) →
-                       Setoid ℓₒ ℓₒᵣ
-                     ) {l : Level} where
+                     (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
+                     {l : Level} where
 
-open import Nets.Hypergraph     VLabel-setoid ELabel-setoid
+open import Nets.Hypergraph     VLabel ELabel-setoid
 open Core {l}
-open import Nets.Category       VLabel-setoid ELabel-setoid {l}
-open import Nets.MonoidalHelper VLabel-setoid ELabel-setoid {l}
+open import Nets.Category       VLabel ELabel-setoid {l}
+open import Nets.MonoidalHelper VLabel ELabel-setoid {l}
 
 
 Hypergraph-Monoidal : Monoidal Hypergraph-Category
