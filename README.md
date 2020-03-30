@@ -12,6 +12,7 @@ To install this library in some folder `PATH/TO/FOLDER`, run the following comma
 2. `git clone https://github.com/MirceaS/monoidal-nets.git`
 3. `mkdir -p ~/.agda`
 4. `echo "PATH/TO/FOLDER/monoidal-nets/monoidal-nets.agda-lib" >> ~/.agda/libraries`
+
 This will allow you to reference this library in other projects.
 
 Make sure that you also have installed the libraries that the project depends on, mentioned above. The process of installing them is very similar to the above and instructions can be found on the respective GitHub pages.
