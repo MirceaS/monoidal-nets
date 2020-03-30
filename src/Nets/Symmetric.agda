@@ -308,3 +308,4 @@ Hypergraph-Symmetric = record
                        (hid-iso (⊕-assoc X Y Z))
                      )
 
+module Hypergraph-Symmetric = Symmetric Hypergraph-Symmetric
