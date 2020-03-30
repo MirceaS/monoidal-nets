@@ -46,7 +46,9 @@ ELabel = ELabel.Carrier
 
 module Core {l : Level} where
 
-  infix 4 _≋[_][_]_
+  infix 4 _≋[_][_]_ _≋_
+  infixr 9 _⊚[_]_ _⊚_
+  infixr 10 _⨂_
 
   record Hypergraph (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₜᵣ ⊔ ℓₒ) where
     field

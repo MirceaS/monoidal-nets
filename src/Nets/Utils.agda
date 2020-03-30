@@ -34,16 +34,6 @@ List A = Σ ℕ (Vec A)
 len         = proj₁
 vec-of-list = proj₂
 
-subF : ∀ {a} {A : Set a} {X Y : List A} → X ≡ Y → Fin (len X) → Fin (len Y)
-subF = subst (Fin ∘ len)
-
-subF′ : ∀ {a} {A : Set a} {X Y : List A} → X ≡ Y → Fin (len X) → Fin (len Y)
-subF′ eq = cast (cong len eq)
-
-subF≗subF′ : ∀ {a} {A : Set a} {X Y : List A} → (eq : X ≡ Y) → (i : Fin (len X)) → subF eq i ≡ subF′ eq i
-subF≗subF′ refl fzero = refl
-subF≗subF′ {X = suc l , X ∷ XS} refl (fsuc i) = cong fsuc (subF≗subF′ {X = l , XS} refl i)
-
 -- the singleton list
 _∷[] : ∀ {l} {A : Set l} → A → List A
 a ∷[] = suc zero , a ∷ []
@@ -59,6 +49,8 @@ n * = n , replicate tt
 4* = 4 *
 
 -- list concatenation
+infixr 10 _⊕_
+
 _⊕_ : ∀ {l} {A : Set l} → (xs ys : List A) → List A
 _⊕_ = zip _+_ _++_
 
@@ -71,7 +63,19 @@ _⊕_ = zip _+_ _++_
 ⊕-assoc (zero , []) Y Z = refl
 ⊕-assoc ((suc n) , (x ∷ xs)) Y Z = cong (x ∷[] ⊕_) (⊕-assoc (n , xs) Y Z)
 
+
 -- some other useful properties
+subF : ∀ {a} {A : Set a} {X Y : List A} → X ≡ Y → Fin (len X) → Fin (len Y)
+subF = subst (Fin ∘ len)
+
+subF′ : ∀ {a} {A : Set a} {X Y : List A} → X ≡ Y → Fin (len X) → Fin (len Y)
+subF′ eq = cast (cong len eq)
+
+subF≗subF′ : ∀ {a} {A : Set a} {X Y : List A} → (eq : X ≡ Y) → (i : Fin (len X)) → subF eq i ≡ subF′ eq i
+subF≗subF′ refl fzero = refl
+subF≗subF′ {X = suc l , X ∷ XS} refl (fsuc i) = cong fsuc (subF≗subF′ {X = l , XS} refl i)
+
+
 0-subst : ∀ {l} {A : Set l} {a b : List A} (eq : a ≡ b) {a′} →
           fzero ≡ subF (cong (a′ ∷[] ⊕_) eq) fzero
 0-subst refl = refl
