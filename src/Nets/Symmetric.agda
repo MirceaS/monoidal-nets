@@ -15,8 +15,6 @@ open import Relation.Binary using (Setoid)
 import      Relation.Binary.Reasoning.Setoid as Setoid-Reasoning
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
-open import Categories.Category.Monoidal.Symmetric using (Symmetric)
-
 open import Nets.Utils
 
 module Nets.Symmetric {ℓₜ ℓₜᵣ : Level}
@@ -38,29 +36,30 @@ open import Categories.Morphism Hypergraph-Category using (_≅_; module ≅)
 open import Categories.Morphism.HeterogeneousIdentity Hypergraph-Category
 open import Categories.Morphism.Properties Hypergraph-Category using (Iso-≈; Iso-∘)
 open import Categories.Category.Monoidal.Utilities Hypergraph-Monoidal using (_⊗ᵢ_)
+open import Categories.Category.Monoidal.Symmetric Hypergraph-Monoidal
 
 
-Hypergraph-Symmetric : Symmetric Hypergraph-Monoidal
-Hypergraph-Symmetric = record
-  { braided = record
-    { braiding = record
-      { F⇒G = record
-        { η = uncurry braid
-        ; commute = uncurry braid-comm
-        ; sym-commute = λ (x , y) → Equiv.sym (braid-comm x y)
-        }
-      ; F⇐G = record
-        { η = uncurry (flip braid)
-        ; commute = uncurry (flip braid-comm)
-        ; sym-commute = λ (x , y) → Equiv.sym (braid-comm y x)
-        }
-      ; iso = λ (x , y) → _≅_.iso (braid-≅ x y)
+Hypergraph-Symmetric : Symmetric
+Hypergraph-Symmetric = symmetricHelper (record
+  { braiding = record
+    { F⇒G = record
+      { η = uncurry braid
+      ; commute = uncurry braid-comm
+      ; sym-commute = λ (x , y) → Equiv.sym (braid-comm x y)
       }
-    ; hexagon₁ = λ {X} {Y} {Z} → hexagon₁ X Y Z
-    ; hexagon₂ = λ {X} {Y} {Z} → hexagon₂ X Y Z
+    ; F⇐G = record
+      { η = uncurry (flip braid)
+      ; commute = uncurry (flip braid-comm)
+      ; sym-commute = λ (x , y) → Equiv.sym (braid-comm y x)
+      }
+    ; iso = λ (x , y) → record
+      { isoˡ = braid-iso x y
+      ; isoʳ = braid-iso y x
+      }
     }
   ; commutative = λ {X} {Y} → braid-iso Y X
-  }
+  ; hexagon = λ {X} {Y} {Z} → hexagon X Y Z
+  })
   where
     open Hypergraph-Category renaming (_∘_ to _⊚_; id to cid)
     open Hypergraph-Monoidal
@@ -199,28 +198,18 @@ Hypergraph-Symmetric = record
         a = len A
         b = len B
 
-    braid-≅ : ∀ A B → A ⊗₀ B ≅ B ⊗₀ A
-    braid-≅ A B = record
-      { from = braid A B
-      ; to = braid B A
-      ; iso = record
-        { isoˡ = braid-iso A B
-        ; isoʳ = braid-iso B A
-        }
-      }
-
     open Commutation
 
-    hexagon₁ : ∀ X Y Z →
-               [ (X ⊗₀ Y) ⊗₀ Z ⇒ Y ⊗₀ Z ⊗₀ X ]⟨
-                 (braid X Y) ⊗₁ cid {Z}          ⇒⟨ (Y ⊗₀ X) ⊗₀ Z ⟩
-                 associator.from {Y} {X} {Z}      ⇒⟨ Y ⊗₀ X ⊗₀ Z ⟩
-                 cid {Y} ⊗₁ (braid X Z)
-               ≈ associator.from {X} {Y} {Z}      ⇒⟨ X ⊗₀ Y ⊗₀ Z ⟩
-                 braid X (Y ⊗₀ Z)                ⇒⟨ (Y ⊗₀ Z) ⊗₀ X ⟩
-                 associator.from {Y} {Z} {X}
-               ⟩
-    hexagon₁ X Y Z = let open HomReasoning hiding (refl; sym; trans) in begin
+    hexagon : ∀ X Y Z →
+              [ (X ⊗₀ Y) ⊗₀ Z ⇒ Y ⊗₀ Z ⊗₀ X ]⟨
+                (braid X Y) ⊗₁ cid {Z}          ⇒⟨ (Y ⊗₀ X) ⊗₀ Z ⟩
+                associator.from {Y} {X} {Z}      ⇒⟨ Y ⊗₀ X ⊗₀ Z ⟩
+                cid {Y} ⊗₁ (braid X Z)
+              ≈ associator.from {X} {Y} {Z}      ⇒⟨ X ⊗₀ Y ⊗₀ Z ⟩
+                braid X (Y ⊗₀ Z)                ⇒⟨ (Y ⊗₀ Z) ⊗₀ X ⟩
+                associator.from {Y} {Z} {X}
+              ⟩
+    hexagon X Y Z = let open HomReasoning hiding (refl; sym; trans) in begin
       _ ≈˘⟨ refl⟩∘⟨ hid-subst-cod g (⊕-assoc Y X Z) ⟩
       _ ≡˘⟨ ⊚[]≡⊚ {f = f} {⊕-assoc Y X Z} {g} ⟩
       _ ≈˘⟨ ≋[][]→≋ hex ⟩
@@ -260,7 +249,7 @@ Hypergraph-Symmetric = record
               _ ≡˘⟨ [,]-cong ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T2) ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T3) (splitAt (x + y) (sub i)) ⟩
               _ ≡˘⟨ [,]-∘-distr inj₁ (splitAt (x + y) (sub i)) ⟩
               _ ≡⟨ cong inj₁ (begin
-                _ ≡⟨ cong [ _ , _ ] (splitAt-sym-assoc {X = X} {Y} {Z} i) ⟩
+                _ ≡⟨ cong [ T1 ∘ T2 , T1 ∘ T3 ] (splitAt-sym-assoc {X = X} {Y} {Z} i) ⟩
                 _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt x i) ⟩
                 _ ≡⟨ [,]-cong (λ j → begin
                   _ ≡⟨ cong (T1 ∘ (splitAt y) ∘ (subF (⊕-assoc Y X Z)) ∘ (inject+ z) ∘ [ raise y , inject+ x ]) (splitAt-inject+ x y j) ⟩
@@ -287,25 +276,5 @@ Hypergraph-Symmetric = record
                 _ ∎) ⟩
               _ ∎}
           }
-
-
-    hexagon₂ : ∀ X Y Z →
-               [ X ⊗₀ Y ⊗₀ Z ⇒ (Z ⊗₀ X) ⊗₀ Y ]⟨
-                 cid {X} ⊗₁ (braid Y Z)          ⇒⟨ X ⊗₀ Z ⊗₀ Y ⟩
-                 (associator.to {X} {Z} {Y}       ⇒⟨ (X ⊗₀ Z) ⊗₀ Y ⟩
-                 (braid X Z) ⊗₁ cid {Y})
-               ≈ associator.to {X} {Y} {Z}        ⇒⟨ (X ⊗₀ Y) ⊗₀ Z ⟩
-                 (braid (X ⊗₀ Y) Z               ⇒⟨ Z ⊗₀ X ⊗₀ Y ⟩
-                 associator.to {Z} {X} {Y})
-               ⟩
-    hexagon₂ X Y Z = Iso-≈ (hexagon₁ Z X Y) (Iso-∘ (Iso-∘
-                       (_≅_.iso ((braid-≅ Z X) ⊗ᵢ ≅.refl))
-                       (hid-iso (⊕-assoc X Z Y)))
-                       (_≅_.iso (≅.refl ⊗ᵢ (braid-≅ Z Y)))
-                     ) (Iso-∘ (Iso-∘
-                       (hid-iso (⊕-assoc Z X Y))
-                       (_≅_.iso (braid-≅ Z (X ⊗₀ Y))))
-                       (hid-iso (⊕-assoc X Y Z))
-                     )
 
 module Hypergraph-Symmetric = Symmetric Hypergraph-Symmetric
