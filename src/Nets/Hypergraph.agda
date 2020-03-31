@@ -45,7 +45,7 @@ module Core {l : Level} where
   infixr 9 _⊚[_]_ _⊚_
   infixr 10 _⨂_
 
-  record Hypergraph (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) where
+  record Hypergraph (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓₜ ⊔ ℓₒ) where
     field
       E : List VLabel → List VLabel → Set l
 
@@ -544,28 +544,42 @@ module Core {l : Level} where
 
     module edge-order = IsPartialOrder partial-order
 
+module _ where
+  open Core {ℓₜ}
 
--- the singleton hypergraph
-⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Core.Hypergraph {ℓₜ} s t
-⟦_⟧ {s} {t} x = record
-  { E = λ s′ t′ → (s ≡ s′) × (t ≡ t′)
-  ; conns→ = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
-                ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
-                }
-  ; conns← = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
-                ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
-                }
-  ; type-match = λ { (inj₁ i) → refl
-                   ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
-                   }
-  ; bijection = (λ
-                  { (inj₁ i) → refl
-                  ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+  -- the singleton hypergraph
+  ⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Hypergraph s t
+  ⟦_⟧ {s} {t} x = record
+    { E = λ s′ t′ → (s ≡ s′) × (t ≡ t′)
+    ; conns→ = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
+                  ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
                   }
-                ) , (λ
-                  { (inj₁ i) → refl
-                  ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+    ; conns← = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
+                  ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
                   }
-                )
-  ; o = λ {(refl , refl) → x}
-  }
+    ; type-match = λ { (inj₁ i) → refl
+                     ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                     }
+    ; bijection = (λ
+                    { (inj₁ i) → refl
+                    ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                    }
+                  ) , (λ
+                    { (inj₁ i) → refl
+                    ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                    }
+                  )
+    ; o = λ {(refl , refl) → x}
+    }
+
+  ⟦⟧-cong : ∀ {s t} {f g : ELabel {s} {t}} → f ELabel.≈ g → ⟦ f ⟧ ≋ ⟦ g ⟧
+  ⟦⟧-cong fg = record
+    { α = id
+    ; α′ = id
+    ; bijection = (λ _ → refl) , (λ _ → refl)
+    ; obj-resp = λ {(refl , refl) → fg}
+    ; conns→-resp = λ
+        { (inj₁ _) → refl
+        ; (inj₂ ((_ , _ , refl , refl) , _)) → refl
+        }
+    }

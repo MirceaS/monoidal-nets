@@ -28,7 +28,7 @@ module Nets.Category {ℓₜ : Level} (VLabel : Set ℓₜ)
 open import Nets.Hypergraph VLabel ELabel-setoid
 open Core {l}
 
-Hypergraph-Category : Category ℓₜ ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+Hypergraph-Category : Category ℓₜ (lsuc l ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
 Hypergraph-Category = categoryHelper record
   { Obj       = List VLabel
   ; _⇒_      = Hypergraph
