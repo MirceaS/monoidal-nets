@@ -1,5 +1,5 @@
 # monoidal-nets
-This is an Agda library developed for the formalisation of String Diagrams (Hypergraphs) along with proofs that they, with the usual operations, form a Symmetric Monoidal Category.
+This is an Agda library developed for the formalisation of String Diagrams along with proofs that they, with the usual operations, form a Symmetric Monoidal Category.
 
 **This library uses the K axiom and the --safe flag.**
 
@@ -10,8 +10,9 @@ This is an Agda library developed for the formalisation of String Diagrams (Hype
 To install this library in some folder `PATH/TO/FOLDER`, run the following commands:
 1. `cd PATH/TO/FOLDER`
 2. `git clone https://github.com/MirceaS/monoidal-nets.git`
-3. `mkdir -p ~/.agda`
-4. `echo "PATH/TO/FOLDER/monoidal-nets/monoidal-nets.agda-lib" >> ~/.agda/libraries`
+3. If the repository folder is called `oms567`, rename it to `monoidal-nets`
+4. `mkdir -p ~/.agda`
+5. `echo "PATH/TO/FOLDER/monoidal-nets/monoidal-nets.agda-lib" >> ~/.agda/libraries`
 
 This will allow you to reference this library in other projects.
 

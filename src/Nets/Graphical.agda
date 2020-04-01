@@ -45,12 +45,12 @@ ELabel-setoid s t = record
       Etrans : Transitive _E≈_
       Etrans {* _} {* _} {* _} = Equiv.trans
 
-open import Nets.Hypergraph Obj ELabel-setoid using (module Core; ⟦_⟧; ⟦⟧-cong)
+open import Nets.Diagram Obj ELabel-setoid using (module Core; ⟦_⟧; ⟦⟧-cong)
 open Core {o} using (_≋_)
 open import Nets.Category Obj ELabel-setoid {o}
 
 
-ToGraphical : Functor (Free G) Hypergraph-Category
+ToGraphical : Functor (Free G) Diagram-Category
 ToGraphical = Radjunct record
   { M₀ = _∷[]
   ; M₁ = ⟦_⟧ ∘ *

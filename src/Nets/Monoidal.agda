@@ -24,29 +24,29 @@ module Nets.Monoidal {ℓₜ : Level} (VLabel : Set ℓₜ)
                      (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
                      {l : Level} where
 
-open import Nets.Hypergraph     VLabel ELabel-setoid
+open import Nets.Diagram     VLabel ELabel-setoid
 open Core {l}
 open import Nets.Category       VLabel ELabel-setoid {l}
 open import Nets.MonoidalHelper VLabel ELabel-setoid {l}
 
 
-Hypergraph-Monoidal : Monoidal Hypergraph-Category
-Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
+Diagram-Monoidal : Monoidal Diagram-Category
+Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
                                id-unit⨂- (≋[][]→≋ -⨂id-unit) (≋[][]→≋ assoc)
   where
-    module HC = Hypergraph-Category
-    HC = Hypergraph-Category
+    module HC = Diagram-Category
+    HC = Diagram-Category
 
     module homomorphism {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
-                        {f₁ : Hypergraph X₁ Y₁} {f₂ : Hypergraph X₂ Y₂}
-                        {g₁ : Hypergraph Y₁ Z₁} {g₂ : Hypergraph Y₂ Z₂} where
+                        {f₁ : Diagram X₁ Y₁} {f₂ : Diagram X₂ Y₂}
+                        {g₁ : Diagram Y₁ Z₁} {g₂ : Diagram Y₂ Z₂} where
     
-      module LHS = Hypergraph ((g₁ HC.∘ f₁) ⨂ (g₂ HC.∘ f₂))
-      module RHS = Hypergraph ((g₁ ⨂ g₂) HC.∘ (f₁ ⨂ f₂))
-      module f₁ = Hypergraph f₁
-      module f₂ = Hypergraph f₂
-      module g₁ = Hypergraph g₁
-      module g₂ = Hypergraph g₂
+      module LHS = Diagram ((g₁ HC.∘ f₁) ⨂ (g₂ HC.∘ f₂))
+      module RHS = Diagram ((g₁ ⨂ g₂) HC.∘ (f₁ ⨂ f₂))
+      module f₁ = Diagram f₁
+      module f₂ = Diagram f₂
+      module g₁ = Diagram g₁
+      module g₂ = Diagram g₂
       
       α : ∀ {input output} → LHS.E input output → RHS.E input output
       α (inj₁ (inj₁ e)) = (inj₁ (inj₁ e))
@@ -123,12 +123,12 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
 
 
     module F-resp-≈ {A} {B} {C} {D}
-                    {f₁ f₂ : Hypergraph A B}
-                    {g₁ g₂ : Hypergraph C D}
+                    {f₁ f₂ : Diagram A B}
+                    {g₁ g₂ : Diagram C D}
                     (f₁=f₂ : (f₁ ≋ f₂))
                     (g₁=g₂ : (g₁ ≋ g₂)) where
-      module LHS = Hypergraph (f₁ ⨂ g₁)
-      module RHS = Hypergraph (f₂ ⨂ g₂)
+      module LHS = Diagram (f₁ ⨂ g₁)
+      module RHS = Diagram (f₂ ⨂ g₂)
       module ff = _≋_ f₁=f₂
       module gg = _≋_ g₁=g₂
       
@@ -229,7 +229,7 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
           }
       }
       where
-        module f = Hypergraph f
+        module f = Diagram f
         open ≡-Reasoning
 
 
@@ -246,8 +246,8 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
       where
         open ≡-Reasoning
 
-        module LHS = Hypergraph (f ⨂ (HC.id {unit}))
-        module RHS = Hypergraph f
+        module LHS = Diagram (f ⨂ (HC.id {unit}))
+        module RHS = Diagram f
 
         α : ∀ {s t} → LHS.E s t → RHS.E s t
         α (inj₁ e) = e
@@ -312,11 +312,11 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
       where
         open ≡-Reasoning
 
-        module LHS = Hypergraph ((f ⨂ g) ⨂ h)
-        module RHS = Hypergraph (f ⨂ (g ⨂ h))
-        module f = Hypergraph f
-        module g = Hypergraph g
-        module h = Hypergraph h
+        module LHS = Diagram ((f ⨂ g) ⨂ h)
+        module RHS = Diagram (f ⨂ (g ⨂ h))
+        module f = Diagram f
+        module g = Diagram g
+        module h = Diagram h
 
         α : ∀ {s t} → LHS.E s t → RHS.E s t
         α (inj₁ (inj₁ e)) = inj₁ e
@@ -403,4 +403,4 @@ Hypergraph-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {
         conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ _) = refl
 
 
-module Hypergraph-Monoidal = Monoidal Hypergraph-Monoidal
+module Diagram-Monoidal = Monoidal Diagram-Monoidal

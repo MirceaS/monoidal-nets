@@ -23,21 +23,21 @@ module Nets.Symmetric {ℓₜ : Level}
                       (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
                       {l : Level} where
 
-open import Nets.Hypergraph VLabel ELabel-setoid
-open Core {l} using (Hypergraph; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
-open import Nets.Category   VLabel ELabel-setoid {l} using (Hypergraph-Category)
-open import Nets.Monoidal   VLabel ELabel-setoid {l} using (Hypergraph-Monoidal)
-import Nets.K-Utils Hypergraph-Category as K-Utils
+open import Nets.Diagram VLabel ELabel-setoid
+open Core {l} using (Diagram; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
+open import Nets.Category   VLabel ELabel-setoid {l} using (Diagram-Category)
+open import Nets.Monoidal   VLabel ELabel-setoid {l} using (Diagram-Monoidal)
+import Nets.K-Utils Diagram-Category as K-Utils
 
-open import Categories.Morphism Hypergraph-Category using (_≅_; module ≅)
-open import Categories.Morphism.HeterogeneousIdentity Hypergraph-Category
-open import Categories.Morphism.Properties Hypergraph-Category using (Iso-≈; Iso-∘)
-open import Categories.Category.Monoidal.Utilities Hypergraph-Monoidal using (_⊗ᵢ_)
-open import Categories.Category.Monoidal.Symmetric Hypergraph-Monoidal
+open import Categories.Morphism Diagram-Category using (_≅_; module ≅)
+open import Categories.Morphism.HeterogeneousIdentity Diagram-Category
+open import Categories.Morphism.Properties Diagram-Category using (Iso-≈; Iso-∘)
+open import Categories.Category.Monoidal.Utilities Diagram-Monoidal using (_⊗ᵢ_)
+open import Categories.Category.Monoidal.Symmetric Diagram-Monoidal
 
 
-Hypergraph-Symmetric : Symmetric
-Hypergraph-Symmetric = symmetricHelper record
+Diagram-Symmetric : Symmetric
+Diagram-Symmetric = symmetricHelper record
   { braiding = record
     { F⇒G = record
       { η = uncurry braid
@@ -58,8 +58,8 @@ Hypergraph-Symmetric = symmetricHelper record
   ; hexagon = λ {X} {Y} {Z} → hexagon X Y Z
   }
   where
-    open Hypergraph-Category renaming (_∘_ to _⊚_; id to cid)
-    open Hypergraph-Monoidal
+    open Diagram-Category renaming (_∘_ to _⊚_; id to cid)
+    open Diagram-Monoidal
 
     braid : ∀ A B → A ⊗₀ B ⇒ B ⊗₀ A
     braid A B = record
@@ -123,10 +123,10 @@ Hypergraph-Symmetric = symmetricHelper record
       }
       where
         open ≡-Reasoning
-        module f = Hypergraph f
-        module g = Hypergraph g
-        module LHS = Hypergraph ((braid B D) ⊚ (f ⊗₁ g))
-        module RHS = Hypergraph ((g ⊗₁ f) ⊚ (braid A C))
+        module f = Diagram f
+        module g = Diagram g
+        module LHS = Diagram ((braid B D) ⊚ (f ⊗₁ g))
+        module RHS = Diagram ((g ⊗₁ f) ⊚ (braid A C))
 
         a = len A
         b = len B
@@ -273,4 +273,4 @@ Hypergraph-Symmetric = symmetricHelper record
               _ ∎}
           }
 
-module Hypergraph-Symmetric = Symmetric Hypergraph-Symmetric
+module Diagram-Symmetric = Symmetric Diagram-Symmetric

@@ -18,9 +18,9 @@ module Nets.MonoidalHelper {ℓₜ : Level} (VLabel : Set ℓₜ)
                            (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
                            {l : Level} where
 
-open import Nets.Hypergraph VLabel ELabel-setoid
+open import Nets.Diagram VLabel ELabel-setoid
 open Core {l}
-open import Nets.Category   VLabel ELabel-setoid {l} renaming (Hypergraph-Category to HC)
+open import Nets.Category   VLabel ELabel-setoid {l} renaming (Diagram-Category to HC)
 open import Nets.K-Utils HC
 
 open import Categories.Morphism HC using (_≅_; module _≅_)

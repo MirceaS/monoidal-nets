@@ -1,9 +1,7 @@
 {-# OPTIONS --without-K --safe #-}
 
-{- This is the main file of this library and it formalises the idea of a String Diagram.
- - Throughout this project, by some abuse of notation, we refer to these String Diagrams
- - as Hypergraphs as that is one way that they can be represented but the reader should
- - ideally have String Diagrams in mind while reading through this project.
+{- This is the main file of this library and it 
+ - formalises the idea of a String Diagram.
  -
  - ~ Octavian-Mircea Sebe, 2020
  -}
@@ -28,7 +26,7 @@ import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
 open import Nets.Utils
 
-module Nets.Hypergraph {ℓₜ : Level}
+module Nets.Diagram {ℓₜ : Level}
                        (VLabel : Set ℓₜ)
                        {ℓₒ ℓₒᵣ : Level}
                        (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
@@ -45,7 +43,7 @@ module Core {l : Level} where
   infixr 9 _⊚[_]_ _⊚_
   infixr 10 _⨂_
 
-  record Hypergraph (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓₜ ⊔ ℓₒ) where
+  record Diagram (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓₜ ⊔ ℓₒ) where
     field
       E : List VLabel → List VLabel → Set l
 
@@ -87,13 +85,13 @@ module Core {l : Level} where
     ↑′ f ((s , t , e) , i) = ((s , t , f e) , i)
 
 
-  -- hypergraph isomorphism
+  -- diagram isomorphism
 
   -- defining the isomorphism heterogenously saves us a lot of trouble later on
-  record _≋[_][_]_ {A B A′ B′ : List VLabel} (LHS : Hypergraph A B) (A≡A′ : A ≡ A′) (B≡B′ : B ≡ B′)
-                   (RHS : Hypergraph A′ B′) : Set (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ) where
-    module LHS = Hypergraph LHS
-    module RHS = Hypergraph RHS
+  record _≋[_][_]_ {A B A′ B′ : List VLabel} (LHS : Diagram A B) (A≡A′ : A ≡ A′) (B≡B′ : B ≡ B′)
+                   (RHS : Diagram A′ B′) : Set (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ) where
+    module LHS = Diagram LHS
+    module RHS = Diagram RHS
     field
       α : ∀ {input output} → LHS.E input output → RHS.E input output
       α′ : ∀ {input output} → RHS.E input output → LHS.E input output
@@ -118,19 +116,19 @@ module Core {l : Level} where
       _ ≡⟨ RHS.bijection₂ (α-out-index (LHS.conns← i)) ⟩
       _ ∎
 
-  -- the homogenous version of the hypergraph isomorphism
-  _≋_ : ∀ {A B} → Rel (Hypergraph A B) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+  -- the homogenous version of the diagram isomorphism
+  _≋_ : ∀ {A B} → Rel (Diagram A B) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
   _≋_ = _≋[ refl ][ refl ]_
 
   module _≋_ = _≋[_][_]_
 
-  ≋[][]→≋ : ∀ {A B A′ B′ : List VLabel} {LHS : Hypergraph A B} {A≡A′ : A ≡ A′} {B≡B′ : B ≡ B′} {RHS : Hypergraph A′ B′} →
-             LHS ≋[ A≡A′ ][ B≡B′ ] RHS → subst₂ Hypergraph A≡A′ B≡B′ LHS ≋ RHS
+  ≋[][]→≋ : ∀ {A B A′ B′ : List VLabel} {LHS : Diagram A B} {A≡A′ : A ≡ A′} {B≡B′ : B ≡ B′} {RHS : Diagram A′ B′} →
+             LHS ≋[ A≡A′ ][ B≡B′ ] RHS → subst₂ Diagram A≡A′ B≡B′ LHS ≋ RHS
   ≋[][]→≋ {A≡A′ = refl} {refl} l=r = l=r
 
 
-  -- heterogenous hypergraph composition
-  _⊚[_]_ : ∀ {A B C D : List VLabel} → Hypergraph C D → B ≡ C → Hypergraph A B → Hypergraph A D
+  -- heterogenous diagram composition
+  _⊚[_]_ : ∀ {A B C D : List VLabel} → Diagram C D → B ≡ C → Diagram A B → Diagram A D
   _⊚[_]_ {A} {B} {C} {D} CD BC AB = record
     { E = E
     ; conns→ = conns→
@@ -140,8 +138,8 @@ module Core {l : Level} where
     ; o = [ AB.o , CD.o ]′
     }
     where
-      module AB = Hypergraph AB
-      module CD = Hypergraph CD
+      module AB = Diagram AB
+      module CD = Diagram CD
 
       open ≡-Reasoning
 
@@ -334,16 +332,16 @@ module Core {l : Level} where
       bijection : _
       bijection = bijection₁ , bijection₂
 
-  -- homogenous hypergraph composition
-  _⊚_ : ∀ {A B C} → Hypergraph B C → Hypergraph A B → Hypergraph A C
+  -- homogenous diagram composition
+  _⊚_ : ∀ {A B C} → Diagram B C → Diagram A B → Diagram A C
   _⊚_ = _⊚[ refl ]_
 
-  ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → {f : Hypergraph C D} → {BC : B ≡ C} → {g : Hypergraph A B} → f ⊚[ BC ] g ≡ f ⊚ (subst (Hypergraph A) BC g)
+  ⊚[]≡⊚ : ∀ {A B C D : List VLabel} → {f : Diagram C D} → {BC : B ≡ C} → {g : Diagram A B} → f ⊚[ BC ] g ≡ f ⊚ (subst (Diagram A) BC g)
   ⊚[]≡⊚ {BC = refl} = refl
 
 
-  -- Hypergraph tensor product
-  _⨂_ : ∀ {A B C D : List VLabel} → Hypergraph A B → Hypergraph C D → Hypergraph (A ⊕ C) (B ⊕ D)
+  -- Diagram tensor product
+  _⨂_ : ∀ {A B C D : List VLabel} → Diagram A B → Diagram C D → Diagram (A ⊕ C) (B ⊕ D)
   _⨂_ {A} {B} {C} {D} AB CD = record
     { E = E
     ; conns→ = conns→
@@ -353,8 +351,8 @@ module Core {l : Level} where
     ; o = [ AB.o , CD.o ]′
     }
     where
-      module AB = Hypergraph AB
-      module CD = Hypergraph CD
+      module AB = Diagram AB
+      module CD = Diagram CD
 
       open ≡-Reasoning
 
@@ -530,11 +528,11 @@ module Core {l : Level} where
       bijection : _
       bijection = bijection₁ , bijection₂
 
-  record SimpleHypergraph (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) where
+  record SimpleDiagram (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) where
     field
-      hypergraph : Hypergraph input output
+      diagram : Diagram input output
 
-    open Hypergraph hypergraph public
+    open Diagram diagram public
 
     _≲_ : Rel (Σ₂ _ _ E) _
     e₁ ≲ e₂ = ∃ λ i₁ → ∃ λ i₂ → conns→ (inj₂ (e₁ , i₁)) ≡ inj₂ (e₂ , i₂)
@@ -547,8 +545,8 @@ module Core {l : Level} where
 module _ where
   open Core {ℓₜ}
 
-  -- the singleton hypergraph
-  ⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Hypergraph s t
+  -- the singleton diagram
+  ⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Diagram s t
   ⟦_⟧ {s} {t} x = record
     { E = λ s′ t′ → (s ≡ s′) × (t ≡ t′)
     ; conns→ = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)

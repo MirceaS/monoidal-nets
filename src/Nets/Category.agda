@@ -25,13 +25,13 @@ module Nets.Category {ℓₜ : Level} (VLabel : Set ℓₜ)
                      {l : Level}
                      where
 
-open import Nets.Hypergraph VLabel ELabel-setoid
+open import Nets.Diagram VLabel ELabel-setoid
 open Core {l}
 
-Hypergraph-Category : Category ℓₜ (lsuc l ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
-Hypergraph-Category = categoryHelper record
+Diagram-Category : Category ℓₜ (lsuc l ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+Diagram-Category = categoryHelper record
   { Obj       = List VLabel
-  ; _⇒_      = Hypergraph
+  ; _⇒_      = Diagram
   ; _≈_       = _≋_
   ; id        = ⊚-id
   ; _∘_       = _⊚_
@@ -42,8 +42,8 @@ Hypergraph-Category = categoryHelper record
   ; ∘-resp-≈  = ⊚-resp-≋
   }
   where
-    ⊚-assoc : {A B C D : List VLabel} {f : Hypergraph A B}
-              {g : Hypergraph B C} {h : Hypergraph C D} →
+    ⊚-assoc : {A B C D : List VLabel} {f : Diagram A B}
+              {g : Diagram B C} {h : Diagram C D} →
               ((h ⊚ g) ⊚ f) ≋ (h ⊚ (g ⊚ f))
     ⊚-assoc {f = f} {g} {h} = record
       { α = λ
@@ -75,9 +75,9 @@ Hypergraph-Category = categoryHelper record
       ; conns→-resp = conns→-resp
       }
       where
-        module f = Hypergraph f
-        module g = Hypergraph g
-        module h = Hypergraph h
+        module f = Diagram f
+        module g = Diagram g
+        module h = Diagram h
 
         conns→-resp : _
         conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
@@ -104,7 +104,7 @@ Hypergraph-Category = categoryHelper record
         conns→-resp (inj₂ ((_ , _ , inj₂ (inj₂ e)) , i))    | (inj₂ _) = refl
 
 
-    ⊚-id : ∀ {A} → Hypergraph A A
+    ⊚-id : ∀ {A} → Diagram A A
     ⊚-id = record
       { E = λ _ _ → ⊥
       ; conns→ = λ {(inj₁ x) → inj₁ x}
@@ -132,7 +132,7 @@ Hypergraph-Category = categoryHelper record
           ; conns→-resp = conns→-resp
           }
           where
-            module f = Hypergraph f
+            module f = Diagram f
             conns→-resp : _
             conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
             conns→-resp (inj₁ i) | (inj₁ _) = refl
@@ -243,7 +243,7 @@ Hypergraph-Category = categoryHelper record
               where open ≡-Reasoning
 
 
-    ⊚-identityˡ : ∀ {A B : List VLabel} {f : Hypergraph A B} → (⊚-id ⊚ f) ≋ f
+    ⊚-identityˡ : ∀ {A B : List VLabel} {f : Diagram A B} → (⊚-id ⊚ f) ≋ f
     ⊚-identityˡ {A} {B} {f} = record
       { α = λ {(inj₁ e) → e}
       ; α′ = inj₁
@@ -253,7 +253,7 @@ Hypergraph-Category = categoryHelper record
       ; conns→-resp = conns→-resp
       }
       where
-        module f = Hypergraph f
+        module f = Diagram f
         conns→-resp : _
         conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
         conns→-resp (inj₁ i)    | (inj₁ _) = refl
@@ -263,7 +263,7 @@ Hypergraph-Category = categoryHelper record
         conns→-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ _) = refl
 
 
-    ⊚-identityʳ : ∀ {A B : List VLabel} {f : Hypergraph A B} → (f ⊚ ⊚-id) ≋ f
+    ⊚-identityʳ : ∀ {A B : List VLabel} {f : Diagram A B} → (f ⊚ ⊚-id) ≋ f
     ⊚-identityʳ {A} {B} {f} = record
       { α = λ {(inj₂ e) → e}
       ; α′ = inj₂
@@ -273,7 +273,7 @@ Hypergraph-Category = categoryHelper record
       ; conns→-resp = conns→-resp
       }
       where
-        module f = Hypergraph f
+        module f = Diagram f
         conns→-resp : _
         conns→-resp (inj₁ i) with (f.conns→ (inj₁ i))
         conns→-resp (inj₁ i)    | (inj₁ _) = refl
@@ -283,7 +283,7 @@ Hypergraph-Category = categoryHelper record
         conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ _) = refl
 
 
-    ⊚-resp-≋ : ∀ {A B C : List VLabel} {f h : Hypergraph B C} {g i : Hypergraph A B} →
+    ⊚-resp-≋ : ∀ {A B C : List VLabel} {f h : Diagram B C} {g i : Diagram A B} →
                 f ≋ h → g ≋ i → (f ⊚ g) ≋ (h ⊚ i)
     ⊚-resp-≋ f≋h g≋i = record
       { α = Sum.map gi.α fh.α
@@ -349,4 +349,4 @@ Hypergraph-Category = categoryHelper record
           _ ≡⟨ cong ((Sum.map₂ _) ∘ (Sum.map₂ _)) i→j ⟩
           _ ∎
 
-module Hypergraph-Category = Category Hypergraph-Category
+module Diagram-Category = Category Diagram-Category
