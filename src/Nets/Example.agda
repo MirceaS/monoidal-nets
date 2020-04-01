@@ -9,6 +9,7 @@ open import Relation.Binary using (Setoid)
 open import Relation.Binary.PropositionalEquality
 
 open import Nets.Utils
+open patterns
 
 module Nets.Example where
 
@@ -29,15 +30,15 @@ open import Nets.Symmetric ⊤ ELabel-setoid {zero}
 {- We will be constructing the following diagram:
 
    D:
-
-           ╭────╮
-      ─────┤  B │    ╭────╮
+             0
+           ╭────╮      2
+      ─────┤  B │    ╭────╮      3
       ─────┤    │╲  ╱│    │    ╭────╮
            ╰────╯ ╲╱ │    ├────┤  C ├───
            ╭────╮ ╱╲ │ A  │    ╰────╯
       ─────┤  C │╱  ╲│    │
            ╰────╯    ╰────╯
-
+             1
 -}
 
 -- First, graphically:
@@ -56,40 +57,40 @@ D-Graphical = record
     list = (! B :: ! C :: ! A :: ! C :: unit)
 
     conns→ : _
-    conns→ (inj₁ 0F) = inj₂ (! (0F , refl , refl) , 0F)
-    conns→ (inj₁ 1F) = inj₂ (! (0F , refl , refl) , 1F)
-    conns→ (inj₁ 2F) = inj₂ (! (1F , refl , refl) , 0F)
-    conns→ (inj₂ ((_ , _ , (0F , refl , refl)) , 0F)) = inj₂ (! (2F , refl , refl) , 1F)
-    conns→ (inj₂ ((_ , _ , (1F , refl , refl)) , 0F)) = inj₂ (! (2F , refl , refl) , 0F)
-    conns→ (inj₂ ((_ , _ , (2F , refl , refl)) , 0F)) = inj₂ (! (3F , refl , refl) , 0F)
-    conns→ (inj₂ ((_ , _ , (3F , refl , refl)) , 0F)) = inj₁ 0F
+    conns→ (inp 0F) = box 0F 0F
+    conns→ (inp 1F) = box 0F 1F
+    conns→ (inp 2F) = box 1F 0F
+    conns→ (box 0F 0F) = box 2F 1F
+    conns→ (box 1F 0F) = box 2F 0F
+    conns→ (box 2F 0F) = box 3F 0F
+    conns→ (box 3F 0F) = oup 0F
 
     conns← : _
-    conns← (inj₁ 0F) = inj₂ (! (3F , refl , refl) , 0F)
-    conns← (inj₂ ((_ , _ , (3F , refl , refl)) , 0F)) = inj₂ (! (2F , refl , refl) , 0F)
-    conns← (inj₂ ((_ , _ , (2F , refl , refl)) , 0F)) = inj₂ (! (1F , refl , refl) , 0F)
-    conns← (inj₂ ((_ , _ , (2F , refl , refl)) , 1F)) = inj₂ (! (0F , refl , refl) , 0F)
-    conns← (inj₂ ((_ , _ , (1F , refl , refl)) , 0F)) = inj₁ 2F
-    conns← (inj₂ ((_ , _ , (0F , refl , refl)) , 0F)) = inj₁ 0F
-    conns← (inj₂ ((_ , _ , (0F , refl , refl)) , 1F)) = inj₁ 1F
+    conns← (oup 0F) = box 3F 0F
+    conns← (box 3F 0F) = box 2F 0F
+    conns← (box 2F 0F) = box 1F 0F
+    conns← (box 2F 1F) = box 0F 0F
+    conns← (box 1F 0F) = inp 2F
+    conns← (box 0F 0F) = inp 0F
+    conns← (box 0F 1F) = inp 1F
 
     bijection₂ : _
-    bijection₂ (inj₁ 0F) = refl
-    bijection₂ (inj₁ 1F) = refl
-    bijection₂ (inj₁ 2F) = refl
-    bijection₂ (inj₂ ((_ , _ , (0F , refl , refl)) , 0F)) = refl
-    bijection₂ (inj₂ ((_ , _ , (1F , refl , refl)) , 0F)) = refl
-    bijection₂ (inj₂ ((_ , _ , (2F , refl , refl)) , 0F)) = refl
-    bijection₂ (inj₂ ((_ , _ , (3F , refl , refl)) , 0F)) = refl
+    bijection₂ (inp 0F) = refl
+    bijection₂ (inp 1F) = refl
+    bijection₂ (inp 2F) = refl
+    bijection₂ (box 0F 0F) = refl
+    bijection₂ (box 1F 0F) = refl
+    bijection₂ (box 2F 0F) = refl
+    bijection₂ (box 3F 0F) = refl
 
     bijection₁ : _
-    bijection₁ (inj₁ 0F) = refl
-    bijection₁ (inj₂ ((_ , _ , (3F , refl , refl)) , 0F)) = refl
-    bijection₁ (inj₂ ((_ , _ , (2F , refl , refl)) , 0F)) = refl
-    bijection₁ (inj₂ ((_ , _ , (2F , refl , refl)) , 1F)) = refl
-    bijection₁ (inj₂ ((_ , _ , (1F , refl , refl)) , 0F)) = refl
-    bijection₁ (inj₂ ((_ , _ , (0F , refl , refl)) , 0F)) = refl
-    bijection₁ (inj₂ ((_ , _ , (0F , refl , refl)) , 1F)) = refl
+    bijection₁ (oup 0F) = refl
+    bijection₁ (box 3F 0F) = refl
+    bijection₁ (box 2F 0F) = refl
+    bijection₁ (box 2F 1F) = refl
+    bijection₁ (box 1F 0F) = refl
+    bijection₁ (box 0F 0F) = refl
+    bijection₁ (box 0F 1F) = refl
 
 -- Second, compositionally:
 open Diagram-Category
@@ -132,12 +133,12 @@ same-diagram = record
     ; (3F , refl , refl) → refl
     }
   ; conns→-resp = λ
-    { (inj₁ 0F) → refl
-    ; (inj₁ 1F) → refl
-    ; (inj₁ 2F) → refl
-    ; (inj₂ ((_ , _ , (0F , refl , refl)) , 0F)) → refl
-    ; (inj₂ ((_ , _ , (1F , refl , refl)) , 0F)) → refl
-    ; (inj₂ ((_ , _ , (2F , refl , refl)) , 0F)) → refl
-    ; (inj₂ ((_ , _ , (3F , refl , refl)) , 0F)) → refl
+    { (inp 0F) → refl
+    ; (inp 1F) → refl
+    ; (inp 2F) → refl
+    ; (box 0F 0F) → refl
+    ; (box 1F 0F) → refl
+    ; (box 2F 0F) → refl
+    ; (box 3F 0F) → refl
     }
   }
