@@ -10,7 +10,6 @@ This is an Agda library developed for the formalisation of String Diagrams along
 To install this library in some folder `PATH/TO/FOLDER`, run the following commands:
 1. `cd PATH/TO/FOLDER`
 2. `git clone https://github.com/MirceaS/monoidal-nets.git`
-3. If the repository folder is called `oms567`, rename it to `monoidal-nets`
 4. `mkdir -p ~/.agda`
 5. `echo "PATH/TO/FOLDER/monoidal-nets/monoidal-nets.agda-lib" >> ~/.agda/libraries`
 
