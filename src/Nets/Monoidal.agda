@@ -205,11 +205,6 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
 
 
-    unit : List VLabel
-    unit = zero , []
-
-
-
     id-unit⨂- : ∀ {A B} {f : A HC.⇒ B} → (HC.id {unit} ⨂ f) ≋ f
     id-unit⨂- {A} {B} {f} = record
       { α = λ {(inj₂ e) → e}

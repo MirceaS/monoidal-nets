@@ -2,11 +2,11 @@
 
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.Unit
-open import Data.Product using (Σ; _,_; proj₁; proj₂; zip)
+open import Data.Product using (Σ; _,_; proj₁; proj₂; _×_; zip)
 open import Data.Nat using (ℕ; zero; suc; _+_)
 open import Data.Fin renaming (zero to fzero; suc to fsuc; _+_ to _f+_)
 open import Data.Fin.Properties using (inject+-raise-splitAt)
-open import Data.Vec using (Vec; _++_; []; _∷_; replicate)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup; replicate)
 open import Data.Sum using (inj₁; inj₂; [_,_]′; map; map₁; map₂)
 open import Data.Sum.Properties
 open import Relation.Binary.PropositionalEquality
@@ -19,14 +19,6 @@ module Nets.Utils where
      (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
 Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
 
--- selectors for the source and target of abstract Edges
-s : ∀ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} → Σ₂ S T E → S
-s = proj₁
-
-t : ∀ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} → Σ₂ S T E → T
-t = proj₁ ∘ proj₂
-
-
 -- convinient way to represent lists as Vectors along with their size
 List : ∀ {l} → Set l → Set l
 List A = Σ ℕ (Vec A)
@@ -34,9 +26,35 @@ List A = Σ ℕ (Vec A)
 len         = proj₁
 vec-of-list = proj₂
 
+module _ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} where
+  -- selectors for the source and target of abstract Edges
+  s : Σ₂ S T E → S
+  s = proj₁
+
+  t : Σ₂ S T E → T
+  t = proj₁ ∘ proj₂
+
+  ! : ∀ {s t} → E s t → Σ₂ S T E
+  ! {s = s} {t} e = s , t , e
+
+  E′ : List (Σ₂ S T E) → S → T → Set (lₛ ⊔ lₜ)
+  E′ list s′ t′ = Σ (Fin (len list)) (λ i → (s (lu i) ≡ s′) × (t (lu i) ≡ t′))
+    where lu = lookup (vec-of-list list)
+
+  o′ : (list : List (Σ₂ S T E)) → ∀ {s t} → E′ list s t → E s t
+  o′ list {s} {t} (i , refl , refl) = proj₂ (proj₂ (lookup (vec-of-list list) i))
+
+unit : ∀ {l} {A : Set l} → List A
+unit = zero , []
+
+infixr 3 _::_
+
+_::_ : ∀ {l} {A : Set l} → A → List A → List A
+a :: (l , as) = suc l , a ∷ as
+
 -- the singleton list
 _∷[] : ∀ {l} {A : Set l} → A → List A
-a ∷[] = suc zero , a ∷ []
+a ∷[] = a :: unit
 
 -- converter from natural numbers to lists of units
 _* : ℕ → List ⊤
@@ -55,7 +73,7 @@ _⊕_ : ∀ {l} {A : Set l} → (xs ys : List A) → List A
 _⊕_ = zip _+_ _++_
 
 -- some properties of list concatenation
-⊕-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ⊕ (zero , []) ≡ X
+⊕-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ⊕ unit ≡ X
 ⊕-identityʳ (zero , []) = refl
 ⊕-identityʳ ((suc n) , (x ∷ xs)) = cong (x ∷[] ⊕_) (⊕-identityʳ (n , xs))
 

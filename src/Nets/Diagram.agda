@@ -27,13 +27,12 @@ import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 open import Nets.Utils
 
 module Nets.Diagram {ℓₜ : Level}
-                       (VLabel : Set ℓₜ)
-                       {ℓₒ ℓₒᵣ : Level}
-                       (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                       where
+                    (VLabel : Set ℓₜ)
+                    {ℓₒ ℓₒᵣ : Level}
+                    (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
+                    where
 
 -- bringing the contents of the setoids into scope as ELabel._≈_ etc.
-
 module ELabel {input : _} {output : _} = Setoid (ELabel-setoid input output)
 ELabel = ELabel.Carrier
 
