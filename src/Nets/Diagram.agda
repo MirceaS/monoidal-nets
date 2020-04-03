@@ -21,20 +21,17 @@ open import Data.Empty.Polymorphic
 open import Data.Unit.Polymorphic
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
-open import Function using (_∘_; Inverseᵇ; id)
+open import Function using (_∘_; _$_; Inverseᵇ; id)
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
 open import Nets.Utils
+open import Nets.Hypergraph
 
-module Nets.Diagram {ℓₜ : Level}
-                    (VLabel : Set ℓₜ)
-                    {ℓₒ ℓₒᵣ : Level}
-                    (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                    where
+module Nets.Diagram {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ₃) where
 
--- bringing the contents of the setoids into scope as ELabel._≈_ etc.
-module ELabel {input : _} {output : _} = Setoid (ELabel-setoid input output)
-ELabel = ELabel.Carrier
+private
+  module E = Hypergraph HG
+  open E renaming (V to VLabel; E to ELabel) using ()
 
 module Core {l : Level} where
 
@@ -42,7 +39,7 @@ module Core {l : Level} where
   infixr 9 _⊚[_]_ _⊚_
   infixr 10 _⨂_
 
-  record Diagram (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓₜ ⊔ ℓₒ) where
+  record Diagram (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
     field
       E : List VLabel → List VLabel → Set l
 
@@ -73,7 +70,7 @@ module Core {l : Level} where
 
     field
       -- the label associated with each box
-      o : ∀ {input output} → E input output → ELabel {input} {output}
+      o : ∀ {input output} → E input output → ELabel input output
 
     ↑ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
         Σ (Σ₂ _ _ E) (Fin ∘ len ∘ s) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ s)
@@ -88,7 +85,7 @@ module Core {l : Level} where
 
   -- defining the isomorphism heterogenously saves us a lot of trouble later on
   record _≋[_][_]_ {A B A′ B′ : List VLabel} (LHS : Diagram A B) (A≡A′ : A ≡ A′) (B≡B′ : B ≡ B′)
-                   (RHS : Diagram A′ B′) : Set (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ) where
+                   (RHS : Diagram A′ B′) : Set (l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
     module LHS = Diagram LHS
     module RHS = Diagram RHS
     field
@@ -96,7 +93,7 @@ module Core {l : Level} where
       α′ : ∀ {input output} → RHS.E input output → LHS.E input output
 
       bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (α {input} {output}) (α′)
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
+      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
 
     α-in-index :  LHS.in-index  → RHS.in-index
     α-in-index  = Sum.map (subF B≡B′) (LHS.↑ α)
@@ -116,7 +113,7 @@ module Core {l : Level} where
       _ ∎
 
   -- the homogenous version of the diagram isomorphism
-  _≋_ : ∀ {A B} → Rel (Diagram A B) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+  _≋_ : ∀ {A B} → Rel (Diagram A B) (l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
   _≋_ = _≋[ refl ][ refl ]_
 
   module _≋_ = _≋[_][_]_
@@ -527,7 +524,7 @@ module Core {l : Level} where
       bijection : _
       bijection = bijection₁ , bijection₂
 
-  record SimpleDiagram (input : List VLabel) (output : List VLabel) : Set ((lsuc l) ⊔ ℓₜ ⊔ ℓₒ) where
+  record SimpleDiagram (input : List VLabel) (output : List VLabel) : Set (lsuc l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
     field
       diagram : Diagram input output
 
@@ -542,10 +539,10 @@ module Core {l : Level} where
     module edge-order = IsPartialOrder partial-order
 
 module _ where
-  open Core {ℓₜ}
+  open Core {ℓ₁}
 
   -- the singleton diagram
-  ⟦_⟧ : ∀ {s t} → ELabel {s} {t} → Diagram s t
+  ⟦_⟧ : ∀ {s t} → ELabel s t → Diagram s t
   ⟦_⟧ {s} {t} x = record
     { E = λ s′ t′ → (s ≡ s′) × (t ≡ t′)
     ; conns→ = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
@@ -569,7 +566,7 @@ module _ where
     ; o = λ {(refl , refl) → x}
     }
 
-  ⟦⟧-cong : ∀ {s t} {f g : ELabel {s} {t}} → f ELabel.≈ g → ⟦ f ⟧ ≋ ⟦ g ⟧
+  ⟦⟧-cong : ∀ {s t} {f g : ELabel s t} → f E.≈ g → ⟦ f ⟧ ≋ ⟦ g ⟧
   ⟦⟧-cong fg = record
     { α = id
     ; α′ = id

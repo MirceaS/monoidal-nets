@@ -16,17 +16,14 @@ import      Relation.Binary.Reasoning.Setoid as Setoid-Reasoning
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 open import Nets.Utils
+open import Nets.Hypergraph
 
-module Nets.Symmetric {ℓₜ : Level}
-                      (VLabel : Set ℓₜ)
-                      {ℓₒ ℓₒᵣ : Level}
-                      (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                      {l : Level} where
+module Nets.Symmetric {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ₃) {l} where
 
-open import Nets.Diagram VLabel ELabel-setoid
+open import Nets.Diagram HG
 open Core {l} using (Diagram; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
-open import Nets.Category   VLabel ELabel-setoid {l} using (Diagram-Category)
-open import Nets.Monoidal   VLabel ELabel-setoid {l} using (Diagram-Monoidal)
+open import Nets.Category HG {l} using (Diagram-Category)
+open import Nets.Monoidal HG {l} using (Diagram-Monoidal)
 import Nets.K-Utils Diagram-Category as K-Utils
 
 open import Categories.Morphism Diagram-Category using (_≅_; module ≅)
@@ -35,6 +32,9 @@ open import Categories.Morphism.Properties Diagram-Category using (Iso-≈; Iso-
 open import Categories.Category.Monoidal.Utilities Diagram-Monoidal using (_⊗ᵢ_)
 open import Categories.Category.Monoidal.Symmetric Diagram-Monoidal
 
+private
+  module E = Hypergraph HG
+  open E renaming (V to VLabel; E to ELabel) using ()
 
 Diagram-Symmetric : Symmetric
 Diagram-Symmetric = symmetricHelper record
@@ -116,8 +116,8 @@ Diagram-Symmetric = symmetricHelper record
           ; (inj₁ (inj₂ e)) → refl
           })
       ; obj-resp = λ
-          { (inj₁ (inj₁ e)) → ELabel.refl
-          ; (inj₁ (inj₂ e)) → ELabel.refl
+          { (inj₁ (inj₁ e)) → E.Equiv.refl
+          ; (inj₁ (inj₂ e)) → E.Equiv.refl
           }
       ; conns→-resp = conns→-resp
       }

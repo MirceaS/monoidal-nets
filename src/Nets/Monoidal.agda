@@ -18,17 +18,18 @@ open import Categories.Category.Product
 open import Categories.Category.Monoidal using (Monoidal)
 
 open import Nets.Utils
+open import Nets.Hypergraph
 
-module Nets.Monoidal {ℓₜ : Level} (VLabel : Set ℓₜ)
-                     {ℓₒ ℓₒᵣ : Level}
-                     (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                     {l : Level} where
+module Nets.Monoidal {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ₃) {l} where
 
-open import Nets.Diagram     VLabel ELabel-setoid
+open import Nets.Diagram HG
 open Core {l}
-open import Nets.Category       VLabel ELabel-setoid {l}
-open import Nets.MonoidalHelper VLabel ELabel-setoid {l}
+open import Nets.Category HG {l}
+open import Nets.MonoidalHelper HG {l}
 
+private
+  module E = Hypergraph HG
+  open E renaming (V to VLabel; E to ELabel) using ()
 
 Diagram-Monoidal : Monoidal Diagram-Category
 Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
@@ -75,11 +76,11 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (α {input} {output}) (α′)
       bijection = bijection₁ , bijection₂
       
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
-      obj-resp (inj₁ (inj₁ e)) = ELabel.refl
-      obj-resp (inj₁ (inj₂ e)) = ELabel.refl
-      obj-resp (inj₂ (inj₁ e)) = ELabel.refl
-      obj-resp (inj₂ (inj₂ e)) = ELabel.refl
+      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
+      obj-resp (inj₁ (inj₁ e)) = E.Equiv.refl
+      obj-resp (inj₁ (inj₂ e)) = E.Equiv.refl
+      obj-resp (inj₂ (inj₁ e)) = E.Equiv.refl
+      obj-resp (inj₂ (inj₂ e)) = E.Equiv.refl
 
       α-in-index :  LHS.in-index  → RHS.in-index
       α-in-index  = Sum.map₂ (Prod.map (λ {(_ , _ , e) → _ , _ , α e}) id)
@@ -142,7 +143,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
                      ; (inj₂ e) → cong inj₂ (proj₁ gg.bijection e)})
                 , (λ { (inj₁ e) → cong inj₁ (proj₂ ff.bijection e)
                      ; (inj₂ e) → cong inj₂ (proj₂ gg.bijection e)})
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) ELabel.≈ (RHS.o (α e))
+      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
       obj-resp (inj₁ e) = ff.obj-resp e
       obj-resp (inj₂ e) = gg.obj-resp e
 
@@ -211,7 +212,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       ; α′ = inj₂
       ; bijection = (λ e → refl)
                   , (λ {(inj₂ e) → refl})
-      ; obj-resp = λ {(inj₂ e) → ELabel.refl}
+      ; obj-resp = λ {(inj₂ e) → E.Equiv.refl}
       ; conns→-resp = λ
           { (inj₁ i) → begin
               _ ≡˘⟨ map-id (f.conns→ _) ⟩
@@ -235,7 +236,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       ; α′ = inj₁
       ; bijection = (λ e → refl)
                   , (λ {(inj₁ e) → refl})
-      ; obj-resp = λ {(inj₁ e) → ELabel.refl}
+      ; obj-resp = λ {(inj₁ e) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
@@ -298,9 +299,9 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
         ; (inj₂ e) → refl
         })
       ; obj-resp = λ
-        { (inj₁ (inj₁ e)) → ELabel.refl
-        ; (inj₁ (inj₂ e)) → ELabel.refl
-        ; (inj₂ e) → ELabel.refl
+        { (inj₁ (inj₁ e)) → E.Equiv.refl
+        ; (inj₁ (inj₂ e)) → E.Equiv.refl
+        ; (inj₂ e) → E.Equiv.refl
         }
       ; conns→-resp = conns→-resp
       }

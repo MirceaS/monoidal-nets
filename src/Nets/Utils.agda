@@ -10,12 +10,13 @@ open import Data.Vec using (Vec; []; _∷_; _++_; lookup; replicate)
 open import Data.Sum using (inj₁; inj₂; [_,_]′; map; map₁; map₂)
 open import Data.Sum.Properties
 open import Relation.Binary.PropositionalEquality
+open import Relation.Binary using (Rel)
 open import Function using (id ; _∘_)
 
 module Nets.Utils where
 
 -- general utilities
-Σ₂ : ∀ {a} {b} {c} (A : Set a) (B : Set b)
+Σ₂ : ∀ {a b c} (A : Set a) (B : Set b)
      (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
 Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
 
@@ -58,8 +59,11 @@ _::_ : ∀ {l} {A : Set l} → A → List A → List A
 a :: (l , as) = suc l , a ∷ as
 
 -- the singleton list
-_∷[] : ∀ {l} {A : Set l} → A → List A
-a ∷[] = a :: unit
+_::[] : ∀ {l} {A : Set l} → A → List A
+a ::[] = a :: unit
+
+inject::[] : ∀ {a} {A : Set a} {x y : A} → x ::[] ≡ y ::[] → x ≡ y
+inject::[] refl = refl
 
 -- converter from natural numbers to lists of units
 _* : ℕ → List ⊤
@@ -80,11 +84,11 @@ _⊕_ = zip _+_ _++_
 -- some properties of list concatenation
 ⊕-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ⊕ unit ≡ X
 ⊕-identityʳ (zero , []) = refl
-⊕-identityʳ ((suc n) , (x ∷ xs)) = cong (x ∷[] ⊕_) (⊕-identityʳ (n , xs))
+⊕-identityʳ ((suc n) , (x ∷ xs)) = cong (x ::[] ⊕_) (⊕-identityʳ (n , xs))
 
 ⊕-assoc : ∀ {a} {A : Set a} (X Y Z : List A) → ((X ⊕ Y) ⊕ Z) ≡ (X ⊕ (Y ⊕ Z))
 ⊕-assoc (zero , []) Y Z = refl
-⊕-assoc ((suc n) , (x ∷ xs)) Y Z = cong (x ∷[] ⊕_) (⊕-assoc (n , xs) Y Z)
+⊕-assoc ((suc n) , (x ∷ xs)) Y Z = cong (x ::[] ⊕_) (⊕-assoc (n , xs) Y Z)
 
 
 -- some other useful properties
@@ -100,11 +104,11 @@ subF≗subF′ {X = suc l , X ∷ XS} refl (fsuc i) = cong fsuc (subF≗subF′ 
 
 
 0-subst : ∀ {l} {A : Set l} {a b : List A} (eq : a ≡ b) {a′} →
-          fzero ≡ subF (cong (a′ ∷[] ⊕_) eq) fzero
+          fzero ≡ subF (cong (a′ ::[] ⊕_) eq) fzero
 0-subst refl = refl
 
 fsuc-subst : ∀ {l} {A : Set l} {a b : List A} (eq : a ≡ b) x {a′} →
-             fsuc (subF eq x) ≡ subF (cong (a′ ∷[] ⊕_) eq) (fsuc x)
+             fsuc (subF eq x) ≡ subF (cong (a′ ::[] ⊕_) eq) (fsuc x)
 fsuc-subst refl x = refl
 
 

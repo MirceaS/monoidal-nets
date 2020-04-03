@@ -10,6 +10,7 @@ open import Relation.Binary.PropositionalEquality
 
 open import Nets.Utils
 open patterns
+open import Nets.Hypergraph
 
 module Nets.Example where
 
@@ -18,14 +19,19 @@ data ELabel : List ⊤ → List ⊤ → Set where
   A B : ELabel 2* 1*
   C   : ELabel 1* 1*
 
-ELabel-setoid : List ⊤ → List ⊤ → Setoid zero zero
-ELabel-setoid s t = setoid (ELabel s t)
+HG : Hypergraph _ _ _
+HG = record
+  { V = ⊤
+  ; E = ELabel
+  ; _≈_ = _≡_
+  ; equiv = isEquivalence
+  }
 
-open import Nets.Diagram   ⊤ ELabel-setoid hiding (ELabel)
+open import Nets.Diagram HG
 open Core {zero} using (Diagram)
-open import Nets.Category  ⊤ ELabel-setoid {zero}
-open import Nets.Monoidal  ⊤ ELabel-setoid {zero}
-open import Nets.Symmetric ⊤ ELabel-setoid {zero}
+open import Nets.Category HG {zero}
+open import Nets.Monoidal HG {zero}
+open import Nets.Symmetric HG {zero}
 
 {- We will be constructing the following diagram:
 
@@ -54,7 +60,7 @@ D-Graphical = record
   }
   where
     list : List (Σ₂ _ _ ELabel)
-    list = (! B :: ! C :: ! A :: ! C :: unit)
+    list = (! B :: ! C :: ! A :: ! C ::[])
 
     conns→ : _
     conns→ (inp 0F) = box 0F 0F

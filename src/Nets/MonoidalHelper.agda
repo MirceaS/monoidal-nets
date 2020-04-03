@@ -12,23 +12,21 @@ open import Categories.Functor.Bifunctor using (Bifunctor)
 open import Categories.Morphism.HeterogeneousIdentity.Properties using (BF-hid)
 
 open import Nets.Utils
+open import Nets.Hypergraph
 
-module Nets.MonoidalHelper {ℓₜ : Level} (VLabel : Set ℓₜ)
-                           {ℓₒ ℓₒᵣ : Level}
-                           (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                           {l : Level} where
+module Nets.MonoidalHelper {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ₃) {l} where
 
-open import Nets.Diagram VLabel ELabel-setoid
+open import Nets.Diagram HG
 open Core {l}
-open import Nets.Category   VLabel ELabel-setoid {l} renaming (Diagram-Category to HC)
-open import Nets.K-Utils HC
+open import Nets.Category HG {l} renaming (Diagram-Category to DC)
+open import Nets.K-Utils DC
 
-open import Categories.Morphism HC using (_≅_; module _≅_)
-open import Categories.Morphism.HeterogeneousIdentity HC
+open import Categories.Morphism DC using (_≅_; module _≅_)
+open import Categories.Morphism.HeterogeneousIdentity DC
 
-module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
+module _ (⊗ : Bifunctor DC DC DC) (unit : Category.Obj DC) where
 
-  open HC
+  open DC
   open Functor ⊗
 
   _⊗₀_ : Obj → Obj → Obj
@@ -98,5 +96,5 @@ module _ (⊗ : Bifunctor HC HC HC) (unit : Category.Obj HC) where
         _ ∎
         where open HomReasoning hiding (refl; sym; trans)
 
-    monoidal : Monoidal HC
+    monoidal : Monoidal DC
     monoidal = record { ⊗ = ⊗; unit = unit; monoidal }

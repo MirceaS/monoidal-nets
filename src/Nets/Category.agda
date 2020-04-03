@@ -18,17 +18,18 @@ import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 open import Categories.Category
 
 open import Nets.Utils
+open import Nets.Hypergraph
 
-module Nets.Category {ℓₜ : Level} (VLabel : Set ℓₜ)
-                     {ℓₒ ℓₒᵣ : Level}
-                     (ELabel-setoid : List VLabel → List VLabel → Setoid ℓₒ ℓₒᵣ)
-                     {l : Level}
-                     where
+module Nets.Category {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ₃) {l} where
 
-open import Nets.Diagram VLabel ELabel-setoid
+open import Nets.Diagram HG
 open Core {l}
 
-Diagram-Category : Category ℓₜ (lsuc l ⊔ ℓₜ ⊔ ℓₒ) (l ⊔ ℓₜ ⊔ ℓₒ ⊔ ℓₒᵣ)
+private
+  module E = Hypergraph HG
+  open E renaming (V to VLabel; E to ELabel) using ()
+
+Diagram-Category : Category ℓ₁ (lsuc l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) (l ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 Diagram-Category = categoryHelper record
   { Obj       = List VLabel
   ; _⇒_      = Diagram
@@ -68,9 +69,9 @@ Diagram-Category = categoryHelper record
           }
         )
       ; obj-resp = λ
-        { (inj₁ x)        → ELabel.refl
-        ; (inj₂ (inj₁ x)) → ELabel.refl
-        ; (inj₂ (inj₂ x)) → ELabel.refl
+        { (inj₁ x)        → E.Equiv.refl
+        ; (inj₂ (inj₁ x)) → E.Equiv.refl
+        ; (inj₂ (inj₂ x)) → E.Equiv.refl
         }
       ; conns→-resp = conns→-resp
       }
@@ -128,7 +129,7 @@ Diagram-Category = categoryHelper record
           { α = id
           ; α′ = id
           ; bijection = (λ _ → refl) , (λ _ → refl)
-          ; obj-resp = λ _ → ELabel.refl
+          ; obj-resp = λ _ → E.Equiv.refl
           ; conns→-resp = conns→-resp
           }
           where
@@ -155,12 +156,12 @@ Diagram-Category = categoryHelper record
             bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (fg.α′ {input} {output}) (fg.α)
             bijection {input} {output} = Prod.swap (fg.bijection {input} {output})
   
-            obj-resp : ∀ {input output} → (e : fg.RHS.E input output) → fg.RHS.o e ELabel.≈ fg.LHS.o (fg.α′ e)
+            obj-resp : ∀ {input output} → (e : fg.RHS.E input output) → fg.RHS.o e E.≈ fg.LHS.o (fg.α′ e)
             obj-resp {input} {output} e = begin
               _ ≡˘⟨ cong fg.RHS.o (proj₁ fg.bijection e) ⟩
               _ ≈˘⟨ fg.obj-resp (fg.α′ e) ⟩
               _ ∎
-              where open SetoidReasoning (ELabel-setoid input output)
+              where open SetoidReasoning E.setoid
 
             conns→-resp : _
             conns→-resp (inj₁ i) with (fg.LHS.conns→ (inj₁ i))
@@ -209,8 +210,8 @@ Diagram-Category = categoryHelper record
               (λ x → trans (cong gh.α (proj₁ fg.bijection (gh.α′ x))) (proj₁ gh.bijection x)) ,
               (λ x → trans (cong fg.α′ (proj₂ gh.bijection (fg.α x))) (proj₂ fg.bijection x))
 
-            obj-resp : ∀ {input output} → (e : fg.LHS.E input output) → fg.LHS.o e ELabel.≈ gh.RHS.o (gh.α (fg.α e))
-            obj-resp {input} {output} e = ELabel.trans (fg.obj-resp e) (gh.obj-resp (fg.α e))
+            obj-resp : ∀ {input output} → (e : fg.LHS.E input output) → fg.LHS.o e E.≈ gh.RHS.o (gh.α (fg.α e))
+            obj-resp {input} {output} e = E.Equiv.trans (fg.obj-resp e) (gh.obj-resp (fg.α e))
 
             conns→-resp : _
             conns→-resp (inj₁ i) with (fg.LHS.conns→ (inj₁ i))
@@ -249,7 +250,7 @@ Diagram-Category = categoryHelper record
       ; α′ = inj₁
       ; bijection = (λ _ → refl) ,
                     (λ {(inj₁ _) → refl})
-      ; obj-resp = λ {(inj₁ _) → ELabel.refl}
+      ; obj-resp = λ {(inj₁ _) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
@@ -269,7 +270,7 @@ Diagram-Category = categoryHelper record
       ; α′ = inj₂
       ; bijection = (λ _ → refl) ,
                     (λ {(inj₂ _) → refl})
-      ; obj-resp = λ {(inj₂ _) → ELabel.refl}
+      ; obj-resp = λ {(inj₂ _) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
