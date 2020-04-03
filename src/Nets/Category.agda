@@ -68,7 +68,7 @@ Diagram-Category = categoryHelper record
           ; (inj₂ (inj₂ x)) → refl
           }
         )
-      ; obj-resp = λ
+      ; label-resp = λ
         { (inj₁ x)        → E.Equiv.refl
         ; (inj₂ (inj₁ x)) → E.Equiv.refl
         ; (inj₂ (inj₂ x)) → E.Equiv.refl
@@ -110,10 +110,10 @@ Diagram-Category = categoryHelper record
       { E = λ _ _ → ⊥
       ; conns→ = λ {(inj₁ x) → inj₁ x}
       ; conns← = λ {(inj₁ x) → inj₁ x}
-      ; type-match = λ {(inj₁ _) → refl}
+      ; VLabel-resp = λ {(inj₁ _) → refl}
       ; bijection = (λ {(inj₁ _) → refl}) ,
                      (λ {(inj₁ _) → refl})
-      ; o = λ ()
+      ; label = λ ()
       }
 
 
@@ -129,7 +129,7 @@ Diagram-Category = categoryHelper record
           { α = id
           ; α′ = id
           ; bijection = (λ _ → refl) , (λ _ → refl)
-          ; obj-resp = λ _ → E.Equiv.refl
+          ; label-resp = λ _ → E.Equiv.refl
           ; conns→-resp = conns→-resp
           }
           where
@@ -147,7 +147,7 @@ Diagram-Category = categoryHelper record
           { α = fg.α′
           ; α′ = fg.α
           ; bijection = bijection
-          ; obj-resp = obj-resp
+          ; label-resp = label-resp
           ; conns→-resp = conns→-resp
           }
           where
@@ -156,10 +156,10 @@ Diagram-Category = categoryHelper record
             bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (fg.α′ {input} {output}) (fg.α)
             bijection {input} {output} = Prod.swap (fg.bijection {input} {output})
   
-            obj-resp : ∀ {input output} → (e : fg.RHS.E input output) → fg.RHS.o e E.≈ fg.LHS.o (fg.α′ e)
-            obj-resp {input} {output} e = begin
-              _ ≡˘⟨ cong fg.RHS.o (proj₁ fg.bijection e) ⟩
-              _ ≈˘⟨ fg.obj-resp (fg.α′ e) ⟩
+            label-resp : ∀ {input output} → (e : fg.RHS.E input output) → fg.RHS.label e E.≈ fg.LHS.label (fg.α′ e)
+            label-resp {input} {output} e = begin
+              _ ≡˘⟨ cong fg.RHS.label (proj₁ fg.bijection e) ⟩
+              _ ≈˘⟨ fg.label-resp (fg.α′ e) ⟩
               _ ∎
               where open SetoidReasoning E.setoid
 
@@ -198,7 +198,7 @@ Diagram-Category = categoryHelper record
           { α = gh.α ∘ fg.α
           ; α′ = fg.α′ ∘ gh.α′
           ; bijection = bijection
-          ; obj-resp = obj-resp
+          ; label-resp = label-resp
           ; conns→-resp = conns→-resp
           }
           where
@@ -210,8 +210,8 @@ Diagram-Category = categoryHelper record
               (λ x → trans (cong gh.α (proj₁ fg.bijection (gh.α′ x))) (proj₁ gh.bijection x)) ,
               (λ x → trans (cong fg.α′ (proj₂ gh.bijection (fg.α x))) (proj₂ fg.bijection x))
 
-            obj-resp : ∀ {input output} → (e : fg.LHS.E input output) → fg.LHS.o e E.≈ gh.RHS.o (gh.α (fg.α e))
-            obj-resp {input} {output} e = E.Equiv.trans (fg.obj-resp e) (gh.obj-resp (fg.α e))
+            label-resp : ∀ {input output} → (e : fg.LHS.E input output) → fg.LHS.label e E.≈ gh.RHS.label (gh.α (fg.α e))
+            label-resp {input} {output} e = E.Equiv.trans (fg.label-resp e) (gh.label-resp (fg.α e))
 
             conns→-resp : _
             conns→-resp (inj₁ i) with (fg.LHS.conns→ (inj₁ i))
@@ -250,7 +250,7 @@ Diagram-Category = categoryHelper record
       ; α′ = inj₁
       ; bijection = (λ _ → refl) ,
                     (λ {(inj₁ _) → refl})
-      ; obj-resp = λ {(inj₁ _) → E.Equiv.refl}
+      ; label-resp = λ {(inj₁ _) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
@@ -270,7 +270,7 @@ Diagram-Category = categoryHelper record
       ; α′ = inj₂
       ; bijection = (λ _ → refl) ,
                     (λ {(inj₂ _) → refl})
-      ; obj-resp = λ {(inj₂ _) → E.Equiv.refl}
+      ; label-resp = λ {(inj₂ _) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
@@ -293,8 +293,8 @@ Diagram-Category = categoryHelper record
                        ; (inj₂ e) → cong inj₂ (proj₁ fh.bijection e) }) ,
                     (λ { (inj₁ e) → cong inj₁ (proj₂ gi.bijection e)
                        ; (inj₂ e) → cong inj₂ (proj₂ fh.bijection e) })
-      ; obj-resp = λ { (inj₁ e) → gi.obj-resp e
-                     ; (inj₂ e) → fh.obj-resp e }
+      ; label-resp = λ { (inj₁ e) → gi.label-resp e
+                     ; (inj₂ e) → fh.label-resp e }
       ; conns→-resp = conns→-resp
       }
       where

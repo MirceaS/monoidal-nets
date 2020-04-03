@@ -76,11 +76,11 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (α {input} {output}) (α′)
       bijection = bijection₁ , bijection₂
       
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
-      obj-resp (inj₁ (inj₁ e)) = E.Equiv.refl
-      obj-resp (inj₁ (inj₂ e)) = E.Equiv.refl
-      obj-resp (inj₂ (inj₁ e)) = E.Equiv.refl
-      obj-resp (inj₂ (inj₂ e)) = E.Equiv.refl
+      label-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.label e) E.≈ (RHS.label (α e))
+      label-resp (inj₁ (inj₁ e)) = E.Equiv.refl
+      label-resp (inj₁ (inj₂ e)) = E.Equiv.refl
+      label-resp (inj₂ (inj₁ e)) = E.Equiv.refl
+      label-resp (inj₂ (inj₂ e)) = E.Equiv.refl
 
       α-in-index :  LHS.in-index  → RHS.in-index
       α-in-index  = Sum.map₂ (Prod.map (λ {(_ , _ , e) → _ , _ , α e}) id)
@@ -143,9 +143,9 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
                      ; (inj₂ e) → cong inj₂ (proj₁ gg.bijection e)})
                 , (λ { (inj₁ e) → cong inj₁ (proj₂ ff.bijection e)
                      ; (inj₂ e) → cong inj₂ (proj₂ gg.bijection e)})
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
-      obj-resp (inj₁ e) = ff.obj-resp e
-      obj-resp (inj₂ e) = gg.obj-resp e
+      label-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.label e) E.≈ (RHS.label (α e))
+      label-resp (inj₁ e) = ff.label-resp e
+      label-resp (inj₂ e) = gg.label-resp e
 
       α-in-index :  LHS.in-index  → RHS.in-index
       α-in-index  = Sum.map₂ (Prod.map (λ {(_ , _ , e) → _ , _ , α e}) id)
@@ -186,7 +186,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
         { α = λ {(inj₁ ())}
         ; α′ = λ ()
         ; bijection = (λ ()) , (λ {(inj₁ ())})
-        ; obj-resp = λ {(inj₁ ())}
+        ; label-resp = λ {(inj₁ ())}
         ; conns→-resp = let open ≡-Reasoning in λ where
             (inj₁ i) → begin
               _ ≡˘⟨ cong inj₁ (inject+-raise-splitAt (len (proj₁ AB)) (len (proj₂ AB)) i) ⟩
@@ -212,7 +212,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       ; α′ = inj₂
       ; bijection = (λ e → refl)
                   , (λ {(inj₂ e) → refl})
-      ; obj-resp = λ {(inj₂ e) → E.Equiv.refl}
+      ; label-resp = λ {(inj₂ e) → E.Equiv.refl}
       ; conns→-resp = λ
           { (inj₁ i) → begin
               _ ≡˘⟨ map-id (f.conns→ _) ⟩
@@ -236,7 +236,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       ; α′ = inj₁
       ; bijection = (λ e → refl)
                   , (λ {(inj₁ e) → refl})
-      ; obj-resp = λ {(inj₁ e) → E.Equiv.refl}
+      ; label-resp = λ {(inj₁ e) → E.Equiv.refl}
       ; conns→-resp = conns→-resp
       }
       where
@@ -298,7 +298,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
         ; (inj₁ (inj₂ e)) → refl
         ; (inj₂ e) → refl
         })
-      ; obj-resp = λ
+      ; label-resp = λ
         { (inj₁ (inj₁ e)) → E.Equiv.refl
         ; (inj₁ (inj₂ e)) → E.Equiv.refl
         ; (inj₂ e) → E.Equiv.refl

@@ -54,9 +54,9 @@ D-Graphical = record
   { E = E′ list
   ; conns→ = conns→
   ; conns← = conns←
-  ; type-match = λ _ → refl
+  ; VLabel-resp = λ _ → refl
   ; bijection = bijection₁ , bijection₂
-  ; o = o′ list
+  ; label = label′ list
   }
   where
     list : List (Σ₂ _ _ ELabel)
@@ -132,7 +132,7 @@ same-diagram = record
     ; (2F , refl , refl) → refl
     ; (3F , refl , refl) → refl
     })
-  ; obj-resp = λ
+  ; label-resp = λ
     { (0F , refl , refl) → refl
     ; (1F , refl , refl) → refl
     ; (2F , refl , refl) → refl

@@ -42,8 +42,8 @@ module _ {l lₛ lₜ} {S : Set lₛ} {T : Set lₜ} {E : S → T → Set l} whe
   E′ list s′ t′ = Σ (Fin (len list)) (λ i → (s (lu i) ≡ s′) × (t (lu i) ≡ t′))
     where lu = lookup (vec-of-list list)
 
-  o′ : (list : List (Σ₂ S T E)) → ∀ {s t} → E′ list s t → E s t
-  o′ list {s} {t} (i , refl , refl) = proj₂ (proj₂ (lookup (vec-of-list list) i))
+  label′ : (list : List (Σ₂ S T E)) → ∀ {s t} → E′ list s t → E s t
+  label′ list {s} {t} (i , refl , refl) = proj₂ (proj₂ (lookup (vec-of-list list) i))
 
   module patterns where
     pattern box e i = (inj₂ ((_ , _ , (e , refl , refl)) , i))

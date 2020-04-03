@@ -66,9 +66,9 @@ Diagram-Symmetric = symmetricHelper record
       { E = λ _ _ → ⊥
       ; conns→ = λ {(inj₁ i) → inj₁ ([ raise b , inject+ a ] (splitAt a i))}
       ; conns← = λ {(inj₁ i) → inj₁ ([ raise a , inject+ b ] (splitAt b i))}
-      ; type-match = type-match
+      ; VLabel-resp = VLabel-resp
       ; bijection = bijection₁ , bijection₂
-      ; o = λ ()
+      ; label = λ ()
       }
       where
         a = len A
@@ -78,8 +78,8 @@ Diagram-Symmetric = symmetricHelper record
 
         open ≡-Reasoning
 
-        type-match : _
-        type-match (inj₁ i) = begin
+        VLabel-resp : _
+        VLabel-resp (inj₁ i) = begin
           _ ≡⟨ lookup-splitAt a va vb i ⟩
           _ ≡˘⟨ [,]-cong (lookup-++ʳ vb va) (lookup-++ˡ vb va) (splitAt a i) ⟩
           _ ≡˘⟨ [,]-∘-distr (lookup (vb ++ va)) (splitAt a i) ⟩
@@ -115,7 +115,7 @@ Diagram-Symmetric = symmetricHelper record
           { (inj₁ (inj₁ e)) → refl
           ; (inj₁ (inj₂ e)) → refl
           })
-      ; obj-resp = λ
+      ; label-resp = λ
           { (inj₁ (inj₁ e)) → E.Equiv.refl
           ; (inj₁ (inj₂ e)) → E.Equiv.refl
           }
@@ -180,7 +180,7 @@ Diagram-Symmetric = symmetricHelper record
       { α = λ {(inj₁ ())}
       ; α′ = λ ()
       ; bijection = (λ ()) , (λ {(inj₁ ())})
-      ; obj-resp = λ {(inj₁ ())}
+      ; label-resp = λ {(inj₁ ())}
       ; conns→-resp = λ {(inj₁ i) → cong inj₁ (begin
           _ ≡˘⟨ inject+-raise-splitAt a b i ⟩
           _ ≡˘⟨ [,]-∘-distr [ _ , _ ] (splitAt a i) ⟩
@@ -239,7 +239,7 @@ Diagram-Symmetric = symmetricHelper record
             { (inj₁ (inj₁ ()))
             ; (inj₂ (inj₁ ()))
             }) , (λ ())
-          ; obj-resp = λ ()
+          ; label-resp = λ ()
           ; conns→-resp = λ {(inj₁ i) → begin
               _ ≡⟨ [,]-∘-distr [ _ , _ ] (splitAt (x + y) (sub i)) ⟩
               _ ≡˘⟨ [,]-cong ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T2) ((cong (map₂ _)) ∘ ([,]-∘-distr inj₁) ∘ T3) (splitAt (x + y) (sub i)) ⟩

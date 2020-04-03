@@ -62,7 +62,7 @@ module Core {l : Level} where
     field
       conns→ : out-index → in-index
       conns← : in-index → out-index
-      type-match : (i : out-index) → out-lookup i ≡ in-lookup (conns→ i)
+      VLabel-resp : (i : out-index) → out-lookup i ≡ in-lookup (conns→ i)
       bijection : Inverseᵇ _≡_ _≡_ conns→ conns←
 
     bijection₁ = proj₁ bijection
@@ -70,7 +70,7 @@ module Core {l : Level} where
 
     field
       -- the label associated with each box
-      o : ∀ {input output} → E input output → ELabel input output
+      label : ∀ {input output} → E input output → ELabel input output
 
     ↑ : {E′ : List VLabel → List VLabel → Set l} → (f : ∀ {s t} → E s t → E′ s t) →
         Σ (Σ₂ _ _ E) (Fin ∘ len ∘ s) → Σ (Σ₂ _ _ E′) (Fin ∘ len ∘ s)
@@ -93,7 +93,7 @@ module Core {l : Level} where
       α′ : ∀ {input output} → RHS.E input output → LHS.E input output
 
       bijection : ∀ {input output} → Inverseᵇ _≡_ _≡_ (α {input} {output}) (α′)
-      obj-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.o e) E.≈ (RHS.o (α e))
+      label-resp : ∀ {input output} → (e : LHS.E input output) → (LHS.label e) E.≈ (RHS.label (α e))
 
     α-in-index :  LHS.in-index  → RHS.in-index
     α-in-index  = Sum.map (subF B≡B′) (LHS.↑ α)
@@ -129,9 +129,9 @@ module Core {l : Level} where
     { E = E
     ; conns→ = conns→
     ; conns← = conns←
-    ; type-match = type-match
+    ; VLabel-resp = VLabel-resp
     ; bijection = bijection
-    ; o = [ AB.o , CD.o ]′
+    ; label = [ AB.label , CD.label ]′
     }
     where
       module AB = Diagram AB
@@ -172,54 +172,54 @@ module Core {l : Level} where
         , inj₂ ∘ (CD.↑′ inj₂)
         ]′ (CD.conns← (inj₂ ((_ , _ , e) , i)))
 
-      type-match : _
-      type-match (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
-      type-match (inj₁ i) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
-      type-match (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
-        _ ≡⟨ AB.type-match (inj₁ i) ⟩
+      VLabel-resp : _
+      VLabel-resp (inj₁ i) with (AB.conns→ (inj₁ i)) | (inspect AB.conns→ (inj₁ i))
+      VLabel-resp (inj₁ i) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
+      VLabel-resp (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₁ i) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ≡⟨ lemma j ⟩
-        _ ≡⟨ CD.type-match (inj₁ (sub j)) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ (sub j)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
         _ ∎
-      type-match (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
-        _ ≡⟨ AB.type-match (inj₁ i) ⟩
+      VLabel-resp (inj₁ i) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₁ i) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ≡⟨ lemma j ⟩
-        _ ≡⟨ CD.type-match (inj₁ (sub j)) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ (sub j)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
         _ ∎
-      type-match (inj₁ i) | (inj₂ _) | [ i→j ] = begin
-        _ ≡⟨ AB.type-match (inj₁ i) ⟩
+      VLabel-resp (inj₁ i) | (inj₂ _) | [ i→j ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₁ i) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
-        _ ≡⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] with (CD.conns→ (inj₁ (sub j))) | (inspect CD.conns→ (inj₁ (sub j)))
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₁ _) | [ j→k ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ≡⟨ lemma j ⟩
-        _ ≡⟨ CD.type-match (inj₁ (sub j)) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ (sub j)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
-        _ ≡⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₁ j) | [ i→j ] | (inj₂ _) | [ j→k ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ≡⟨ lemma j ⟩
-        _ ≡⟨ CD.type-match (inj₁ (sub j)) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ (sub j)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ j→k ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = begin
-        _ ≡⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) | (inj₂ _) | [ i→j ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
-      type-match (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] = begin
-        _ ≡⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₁ _) | [ i→j ] = begin
+        _ ≡⟨ CD.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = begin
-        _ ≡⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i)) | (inj₂ _) | [ i→j ] = begin
+        _ ≡⟨ CD.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i→j ⟩
         _ ∎
 
@@ -342,9 +342,9 @@ module Core {l : Level} where
     { E = E
     ; conns→ = conns→
     ; conns← = conns←
-    ; type-match = type-match
+    ; VLabel-resp = VLabel-resp
     ; bijection = bijection
-    ; o = [ AB.o , CD.o ]′
+    ; label = [ AB.label , CD.label ]′
     }
     where
       module AB = Diagram AB
@@ -368,54 +368,54 @@ module Core {l : Level} where
       conns← (inj₂ ((_ , _ , inj₁ e) , i)) = Sum.map (inject+ (len C)) (AB.↑′ inj₁) (AB.conns← (inj₂ ((_ , _ , e) , i)))
       conns← (inj₂ ((_ , _ , inj₂ e) , i)) = Sum.map (raise   (len A)) (CD.↑′ inj₂) (CD.conns← (inj₂ ((_ , _ , e) , i)))
 
-      type-match : _
-      type-match (inj₁ i) with (splitAt (len A) i) | (inspect (splitAt (len A)) i)
-      type-match (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ] with (AB.conns→ (inj₁ i₁)) | (inspect AB.conns→ (inj₁ i₁))
-      type-match (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₁ j) | [ i=j ] = begin
+      VLabel-resp : _
+      VLabel-resp (inj₁ i) with (splitAt (len A) i) | (inspect (splitAt (len A)) i)
+      VLabel-resp (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ] with (AB.conns→ (inj₁ i₁)) | (inspect AB.conns→ (inj₁ i₁))
+      VLabel-resp (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₁ j) | [ i=j ] = begin
         _ ≡⟨ lookup-splitAt (len A) (vec-of-list A) (vec-of-list C) i ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=i₁ ⟩
-        _ ≡⟨ AB.type-match (inj₁ i₁) ⟩
+        _ ≡⟨ AB.VLabel-resp (inj₁ i₁) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ≡˘⟨ lookup-++ˡ (vec-of-list B) (vec-of-list D) j ⟩
         _ ∎
-      type-match (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₂ _) | [ i=j ] = begin
+      VLabel-resp (inj₁ i)    | (inj₁ i₁) | [ i=i₁ ]    | (inj₂ _) | [ i=j ] = begin
         _ ≡⟨ lookup-splitAt (len A) (vec-of-list A) (vec-of-list C) i ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=i₁ ⟩
-        _ ≡⟨ AB.type-match (inj₁ i₁) ⟩
+        _ ≡⟨ AB.VLabel-resp (inj₁ i₁) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ∎
-      type-match (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ] with (CD.conns→ (inj₁ i₂)) | (inspect CD.conns→ (inj₁ i₂))
-      type-match (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₁ j) | [ i=j ] = begin
+      VLabel-resp (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ] with (CD.conns→ (inj₁ i₂)) | (inspect CD.conns→ (inj₁ i₂))
+      VLabel-resp (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₁ j) | [ i=j ] = begin
         _ ≡⟨ lookup-splitAt (len A) (vec-of-list A) (vec-of-list C) i ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=i₂ ⟩
-        _ ≡⟨ CD.type-match (inj₁ i₂) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ i₂) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ≡˘⟨ lookup-++ʳ (vec-of-list B) (vec-of-list D) j ⟩
         _ ∎
-      type-match (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₂ _) | [ i=j ] = begin
+      VLabel-resp (inj₁ i)    | (inj₂ i₂) | [ i=i₂ ]    | (inj₂ _) | [ i=j ] = begin
         _ ≡⟨ lookup-splitAt (len A) (vec-of-list A) (vec-of-list C) i ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=i₂ ⟩
-        _ ≡⟨ CD.type-match (inj₁ i₂) ⟩
+        _ ≡⟨ CD.VLabel-resp (inj₁ i₂) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
-      type-match (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i=j ] = begin
-        _ ≡⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i)) with (AB.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect AB.conns→ (inj₂ ((_ , _ , e) , i)))
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₁ j) | [ i=j ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ≡˘⟨ lookup-++ˡ (vec-of-list B) (vec-of-list D) j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ _) | [ i=j ] = begin
-        _ ≡⟨ AB.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₁ e) , i))    | (inj₂ _) | [ i=j ] = begin
+        _ ≡⟨ AB.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
-      type-match (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) | [ i=j ] = begin
-        _ ≡⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i)) with (CD.conns→ (inj₂ ((_ , _ , e) , i))) | (inspect CD.conns→ (inj₂ ((_ , _ , e) , i)))
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) | [ i=j ] = begin
+        _ ≡⟨ CD.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ≡˘⟨ lookup-++ʳ (vec-of-list B) (vec-of-list D) j ⟩
         _ ∎
-      type-match (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ _) | [ i=j ] = begin
-        _ ≡⟨ CD.type-match (inj₂ ((_ , _ , e) , i)) ⟩
+      VLabel-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ _) | [ i=j ] = begin
+        _ ≡⟨ CD.VLabel-resp (inj₂ ((_ , _ , e) , i)) ⟩
         _ ≡⟨ cong [ _ , _ ]′ i=j ⟩
         _ ∎
 
@@ -551,9 +551,9 @@ module _ where
     ; conns← = λ { (inj₁ i) → inj₂ ((s , t , refl , refl) , i)
                   ; (inj₂ ((_ , _ , refl , refl) , i)) → inj₁ i
                   }
-    ; type-match = λ { (inj₁ i) → refl
-                     ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
-                     }
+    ; VLabel-resp = λ { (inj₁ i) → refl
+                      ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
+                      }
     ; bijection = (λ
                     { (inj₁ i) → refl
                     ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
@@ -563,7 +563,7 @@ module _ where
                     ; (inj₂ ((_ , _ , refl , refl) , i)) → refl
                     }
                   )
-    ; o = λ {(refl , refl) → x}
+    ; label = λ {(refl , refl) → x}
     }
 
   ⟦⟧-cong : ∀ {s t} {f g : ELabel s t} → f E.≈ g → ⟦ f ⟧ ≋ ⟦ g ⟧
@@ -571,7 +571,7 @@ module _ where
     { α = id
     ; α′ = id
     ; bijection = (λ _ → refl) , (λ _ → refl)
-    ; obj-resp = λ {(refl , refl) → fg}
+    ; label-resp = λ {(refl , refl) → fg}
     ; conns→-resp = λ
         { (inj₁ _) → refl
         ; (inj₂ ((_ , _ , refl , refl) , _)) → refl
