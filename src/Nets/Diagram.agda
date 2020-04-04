@@ -21,6 +21,7 @@ open import Data.Empty.Polymorphic
 open import Data.Unit.Polymorphic
 open import Relation.Binary
 open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.Construct.Closure.Transitive using (Plus)
 open import Function using (_∘_; _$_; Inverseᵇ; id)
 import Relation.Binary.Reasoning.Setoid as SetoidReasoning
 
@@ -534,9 +535,7 @@ module Core {l : Level} where
     e₁ ≲ e₂ = ∃ λ i₁ → ∃ λ i₂ → conns→ (inj₂ (e₁ , i₁)) ≡ inj₂ (e₂ , i₂)
 
     field
-      partial-order : IsPartialOrder _≡_ _≲_
-
-    module edge-order = IsPartialOrder partial-order
+      asym : Asymmetric (Plus _≲_)
 
 module _ where
   open Core {ℓ₁}
