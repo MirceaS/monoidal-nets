@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --without-K --safe #-}
 
 open import Level
 open import Data.Unit hiding (setoid)

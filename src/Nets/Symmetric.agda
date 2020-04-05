@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --without-K --safe #-}
 
 open import Level
 open import Data.Product as Prod using (Σ; _,_; proj₁; proj₂; uncurry)
@@ -24,7 +24,6 @@ open import Nets.Diagram HG
 open Core {l} using (Diagram; _≋[_][_]_; ≋[][]→≋; _⊚[_]_; ⊚[]≡⊚)
 open import Nets.Category HG {l} using (Diagram-Category)
 open import Nets.Monoidal HG {l} using (Diagram-Monoidal)
-import Nets.K-Utils Diagram-Category as K-Utils
 
 open import Categories.Morphism Diagram-Category using (_≅_; module ≅)
 open import Categories.Morphism.HeterogeneousIdentity Diagram-Category

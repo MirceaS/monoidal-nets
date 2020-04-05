@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --without-K --safe #-}
 
 open import Level
 open import Function using (id; _∘_; _$_)
@@ -7,8 +7,6 @@ import Relation.Binary.Reasoning.Setoid as Setoid-Reasoning
 open import Relation.Binary.Construct.Closure.ReflexiveTransitive
 open import Data.Empty.Polymorphic
 open import Data.Product using (Σ; _,_; proj₁; proj₂)
-open import Data.Product.Properties hiding (,-injectiveʳ)
-open import Data.Product.Properties.WithK
 open import Data.Sum using (inj₁)
 open import Data.Sum.Properties
 open import Data.Fin renaming (zero to fzero) using ()

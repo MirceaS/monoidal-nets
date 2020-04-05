@@ -13,12 +13,57 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Binary using (Rel)
 open import Function using (id ; _∘_)
 
+open import Categories.Category using (Category)
+import Categories.Morphism.HeterogeneousIdentity as HId
+
 module Nets.Utils where
 
 -- general utilities
 Σ₂ : ∀ {a b c} (A : Set a) (B : Set b)
      (C : A → B → Set c) → Set (a ⊔ b ⊔ c)
 Σ₂ A B C = Σ A λ a → Σ B λ b → C a b
+
+trans-cong′ : ∀ {a b} {A : Set a} {B : Set b} →
+              ∀ {x y z : A} {f : A → B} (p : x ≡ y) {q : y ≡ z} →
+              trans (cong f p) (cong f q) ≡ cong f (trans p q)
+trans-cong′ refl = refl
+
+cong₂-reflˡ′ : ∀ {a b c } {A : Set a} {B : Set b} {C : Set c} →
+             ∀ {_∙_ : A → B → C} {x u v} → (p : u ≡ v) →
+              cong₂ _∙_ refl p ≡ cong (x ∙_) p
+cong₂-reflˡ′ refl = refl
+
+cong₂-reflʳ′ : ∀ {a b c } {A : Set a} {B : Set b} {C : Set c} →
+             ∀ {_∙_ : A → B → C} {x y u} → (p : x ≡ y) →
+              cong₂ _∙_ p refl ≡ cong (_∙ u) p
+cong₂-reflʳ′ refl = refl
+
+
+-- commutative squares made up of hid's
+-- (should probably go into agda-categories at some point)
+module hid-Utils {o ℓ e} (C : Category o ℓ e) where
+  open HId C
+  open Category C renaming (id to cid; _∘_ to _⊚_)
+
+  square₁ : ∀ {A B C D} (f : A ⇒ B) (g : C ⇒ D) (AC : A ≡ C) (BD : B ≡ D) →
+            (subst₂ _⇒_ AC BD f ≈ g) →
+            CommutativeSquare f (hid AC) (hid BD) g
+  square₁ f g refl refl eq = begin
+    cid ⊚ f           ≈⟨ identityˡ ⟩
+    f                ≈⟨ eq ⟩
+    g                ≈˘⟨ identityʳ ⟩
+    g ⊚ cid           ∎
+    where open HomReasoning
+
+  square₂ : ∀ {A B C D} (f : A ⇒ B) (g : C ⇒ D) (CA : C ≡ A) (DB : D ≡ B) →
+            (subst₂ _⇒_ CA DB g ≈ f) →
+            CommutativeSquare f (hid (sym CA)) (hid (sym DB)) g
+  square₂ f g refl refl eq = begin
+    cid ⊚ f           ≈⟨ identityˡ ⟩
+    f                ≈˘⟨ eq ⟩
+    g                ≈˘⟨ identityʳ ⟩
+    g ⊚ cid           ∎
+    where open HomReasoning
 
 -- convinient way to represent lists as Vectors along with their size
 List : ∀ {l} → Set l → Set l
@@ -84,12 +129,43 @@ _⊕_ = zip _+_ _++_
 -- some properties of list concatenation
 ⊕-identityʳ : ∀ {a} {A : Set a} (X : List A) → X ⊕ unit ≡ X
 ⊕-identityʳ (zero , []) = refl
-⊕-identityʳ ((suc n) , (x ∷ xs)) = cong (x ::[] ⊕_) (⊕-identityʳ (n , xs))
+⊕-identityʳ (suc n , x ∷ xs) = cong (x ::_) (⊕-identityʳ (n , xs))
 
 ⊕-assoc : ∀ {a} {A : Set a} (X Y Z : List A) → ((X ⊕ Y) ⊕ Z) ≡ (X ⊕ (Y ⊕ Z))
 ⊕-assoc (zero , []) Y Z = refl
-⊕-assoc ((suc n) , (x ∷ xs)) Y Z = cong (x ::[] ⊕_) (⊕-assoc (n , xs) Y Z)
+⊕-assoc (suc n , x ∷ xs) Y Z = cong (x ::_) (⊕-assoc (n , xs) Y Z)
 
+
+-- triangle and pentagon identities - needed for Monoidal Category
+triangle-identity : ∀ {a} {A : Set a} X Y → trans (⊕-assoc {a} {A} X unit Y) refl ≡ cong (_⊕ Y) (⊕-identityʳ X)
+triangle-identity (zero , []) Y = refl
+triangle-identity (suc n , x ∷ X) Y = let open ≡-Reasoning in begin
+  _ ≡⟨ trans-reflʳ (⊕-assoc (suc n , x ∷ X) unit Y) ⟩
+  _ ≡˘⟨ cong (cong (x ::_)) (trans-reflʳ (⊕-assoc (n , X) unit Y)) ⟩
+  _ ≡⟨ cong (cong (x ::_)) (triangle-identity (n , X) Y) ⟩
+  _ ≡˘⟨ cong-∘ (⊕-identityʳ (n , X)) ⟩
+  _ ≡⟨ cong-∘ (⊕-identityʳ (n , X)) ⟩
+  _ ∎
+
+pentagon-identity : ∀ {a} {A : Set a} X Y Z W → trans (trans
+                                                   (cong (_⊕ W) (⊕-assoc {a} {A} X Y Z))
+                                                   (⊕-assoc X _ W))
+                                                   (cong (X ⊕_) (⊕-assoc Y Z W)) ≡
+                                                 trans
+                                                   (⊕-assoc _ Z W)
+                                                   (⊕-assoc X Y _)
+pentagon-identity (zero , []) Y Z W = let open ≡-Reasoning in begin
+  _ ≡⟨ cong-id (⊕-assoc Y Z W) ⟩
+  _ ≡˘⟨ trans-reflʳ (⊕-assoc Y Z W) ⟩
+  _ ∎
+pentagon-identity (suc n , x ∷ X) Y Z W = let open ≡-Reasoning in begin
+  _ ≡˘⟨ cong₂ trans (cong₂ trans (cong-∘ (⊕-assoc (n , X) Y Z)) refl) refl ⟩
+  _ ≡⟨ cong₂ trans (cong₂ trans (cong-∘ {f = x ::_} (⊕-assoc (n , X) Y Z)) refl) (cong-∘ {f = x ::_} (⊕-assoc Y Z W)) ⟩
+  _ ≡⟨ cong₂ trans (trans-cong′ {f = x ::_} (cong (_⊕ W) (⊕-assoc (n , X) Y Z))) refl ⟩
+  _ ≡⟨ trans-cong′ {f = x ::_} (trans (cong (_⊕ W) (⊕-assoc (n , X) Y Z)) (⊕-assoc (n , X) _ W)) ⟩
+  _ ≡⟨ cong (cong (x ::_)) (pentagon-identity (n , X) Y Z W) ⟩
+  _ ≡˘⟨ trans-cong′ (⊕-assoc ((n , X) ⊕ Y) Z W) ⟩
+  _ ∎
 
 -- some other useful properties
 subF : ∀ {a} {A : Set a} {X Y : List A} → X ≡ Y → Fin (len X) → Fin (len Y)

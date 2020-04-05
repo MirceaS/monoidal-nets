@@ -1,4 +1,4 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --without-K --safe #-}
 
 open import Level renaming (zero to lzero; suc to lsuc)
 open import Data.Product as Prod using (Σ; _,_; proj₁; proj₂)
@@ -16,6 +16,7 @@ open import Categories.Functor.Bifunctor using (Bifunctor)
 open import Categories.Category
 open import Categories.Category.Product
 open import Categories.Category.Monoidal using (Monoidal)
+open import Categories.Morphism.HeterogeneousIdentity.Properties using (BF-hid)
 
 open import Nets.Utils
 open import Nets.Hypergraph
@@ -24,26 +25,41 @@ module Nets.Monoidal {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ�
 
 open import Nets.Diagram HG
 open Core {l}
-open import Nets.Category HG {l}
+open import Nets.Category HG {l} renaming (Diagram-Category to DC)
 open import Nets.MonoidalHelper HG {l}
+
+open import Categories.Morphism DC using (_≅_; module _≅_)
+open import Categories.Morphism.HeterogeneousIdentity DC
 
 private
   module E = Hypergraph HG
   open E renaming (V to VLabel; E to ELabel) using ()
 
-Diagram-Monoidal : Monoidal Diagram-Category
-Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
-                               id-unit⨂- (≋[][]→≋ -⨂id-unit) (≋[][]→≋ assoc)
+Diagram-Monoidal : Monoidal DC
+Diagram-Monoidal = record
+  { ⊗ = ⊗
+  ; unit = unit
+  ; unitorˡ = unitorˡ
+  ; unitorʳ = unitorʳ
+  ; associator = λ {X} {Y} {Z} → associator {X = X} {Y = Y} {Z = Z}
+  ; unitorˡ-commute-from = unitorˡ-commute-from
+  ; unitorˡ-commute-to = unitorˡ-commute-to
+  ; unitorʳ-commute-from = unitorʳ-commute-from
+  ; unitorʳ-commute-to = unitorʳ-commute-to
+  ; assoc-commute-from = assoc-commute-from
+  ; assoc-commute-to = assoc-commute-to
+  ; triangle = triangle
+  ; pentagon = pentagon
+  }
   where
-    module HC = Diagram-Category
-    HC = Diagram-Category
+    open Category DC renaming (id to cid) using (Obj; _⇒_; CommutativeSquare; module HomReasoning)
 
     module homomorphism {X₁} {X₂} {Y₁} {Y₂} {Z₁} {Z₂}
                         {f₁ : Diagram X₁ Y₁} {f₂ : Diagram X₂ Y₂}
                         {g₁ : Diagram Y₁ Z₁} {g₂ : Diagram Y₂ Z₂} where
     
-      module LHS = Diagram ((g₁ HC.∘ f₁) ⨂ (g₂ HC.∘ f₂))
-      module RHS = Diagram ((g₁ ⨂ g₂) HC.∘ (f₁ ⨂ f₂))
+      module LHS = Diagram ((g₁ ⊚ f₁) ⨂ (g₂ ⊚ f₂))
+      module RHS = Diagram ((g₁ ⨂ g₂) ⊚ (f₁ ⨂ f₂))
       module f₁ = Diagram f₁
       module f₂ = Diagram f₂
       module g₁ = Diagram g₁
@@ -178,7 +194,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
 
 
-    ⊗ : Bifunctor HC HC HC
+    ⊗ : Bifunctor DC DC DC
     ⊗ = record
       { F₀ = Prod.uncurry _⊕_
       ; F₁ = Prod.uncurry _⨂_
@@ -206,8 +222,8 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
 
 
-    id-unit⨂- : ∀ {A B} {f : A HC.⇒ B} → (HC.id {unit} ⨂ f) ≋ f
-    id-unit⨂- {A} {B} {f} = record
+    id-unit⨂- : ∀ {X Y} {f : X ⇒ Y} → DC.id {unit} ⨂ f ≋ f
+    id-unit⨂- {f = f} = record
       { α = λ {(inj₂ e) → e}
       ; α′ = inj₂
       ; bijection = (λ e → refl)
@@ -230,8 +246,8 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
 
 
-    -⨂id-unit : ∀ {A B} {f : A HC.⇒ B} → (f ⨂ (HC.id {unit})) ≋[ ⊕-identityʳ A ][ ⊕-identityʳ B ] f
-    -⨂id-unit {A} {B} {f} = record
+    -⨂id-unit : ∀ {X Y} {f : X ⇒ Y} → f ⨂ (DC.id {unit}) ≋[ ⊕-identityʳ X ][ ⊕-identityʳ Y ] f
+    -⨂id-unit {X = X} {Y = Y} {f = f} = record
       { α = α
       ; α′ = inj₁
       ; bijection = (λ e → refl)
@@ -242,16 +258,16 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
       where
         open ≡-Reasoning
 
-        module LHS = Diagram (f ⨂ (HC.id {unit}))
+        module LHS = Diagram (f ⨂ (DC.id {unit}))
         module RHS = Diagram f
 
         α : ∀ {s t} → LHS.E s t → RHS.E s t
         α (inj₁ e) = e
 
         α-in-index :  LHS.in-index  → RHS.in-index
-        α-in-index  = Sum.map (subF (⊕-identityʳ B)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-in-index  = Sum.map (subF (⊕-identityʳ Y)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         α-out-index : LHS.out-index → RHS.out-index
-        α-out-index = Sum.map (subF (⊕-identityʳ A)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-out-index = Sum.map (subF (⊕-identityʳ X)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
 
         lemma : ∀ {A : List VLabel} → (i : Fin ((len A) + zero)) →
                 splitAt (len A) i ≡ inj₁ (subF (⊕-identityʳ A) i)
@@ -272,7 +288,7 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
           _ ≡˘⟨ map-id (RHS.conns→ (α-out-index (inj₁ i))) ⟩
           _ ≡⟨ map-cong lemma2 (λ _ → refl) (RHS.conns→ (α-out-index (inj₁ i))) ⟩
           _ ≡˘⟨ map-commute (RHS.conns→ (α-out-index (inj₁ i))) ⟩
-          _ ≡˘⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (lemma {A} i) ⟩
+          _ ≡˘⟨ cong ([ _ , _ ]′ ∘ [ _ , _ ]′) (lemma {X} i) ⟩
           _ ∎
         conns→-resp (inj₂ (( _ , _ , inj₁ e) , i)) with RHS.conns→ (inj₂ (( _ , _ , e) , i))
         conns→-resp (inj₂ (( _ , _ , inj₁ e) , i))    | (inj₁ j) = cong inj₁ (lemma2 j)
@@ -280,9 +296,10 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
 
 
-    assoc : ∀ {A A′ A′′ B B′ B′′} {f : A HC.⇒ B} {g : A′ HC.⇒ B′} {h : A′′ HC.⇒ B′′} →
-            ((f ⨂ g) ⨂ h) ≋[ ⊕-assoc A A′ A′′ ][ ⊕-assoc B B′ B′′ ] (f ⨂ (g ⨂ h))
-    assoc {A} {A′} {A′′} {B} {B′} {B′′} {f} {g} {h} = record
+    assoc : ∀ {X X′ Y Y′ Z Z′}
+            {f : X DC.⇒ X′} {g : Y DC.⇒ Y′} {h : Z DC.⇒ Z′} →
+            (f ⨂ g) ⨂ h ≋[ ⊕-assoc X Y Z ][ ⊕-assoc X′ Y′ Z′ ] f ⨂ (g ⨂ h)
+    assoc {X} {X′} {Y} {Y′} {Z} {Z′} {f} {g} {h} = record
       { α = α
       ; α′ = λ
         { (inj₁ e) → inj₁ (inj₁ e)
@@ -320,9 +337,9 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
         α (inj₂ e) = inj₂ (inj₂ e)
 
         α-in-index :  LHS.in-index  → RHS.in-index
-        α-in-index  = Sum.map (subF (⊕-assoc B B′ B′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-in-index  = Sum.map (subF (⊕-assoc X′ Y′ Z′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
         α-out-index : LHS.out-index → RHS.out-index
-        α-out-index = Sum.map (subF (⊕-assoc A A′ A′′)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
+        α-out-index = Sum.map (subF (⊕-assoc X Y Z)) (λ {((_ , _ , e) , i) → (_ , _ , α e) , i})
 
         lemma : ∀ {l} {S : Set l} {A B C} {f : Fin (len A) → S} {g : Fin (len B) → S} {h : Fin (len C) → S} →
                 (i : Fin ((len A + len B) + len C)) →
@@ -367,36 +384,73 @@ Diagram-Monoidal = monoidal ⊗ unit refl (λ {x} → ⊕-identityʳ x) (λ {x y
 
         conns→-resp : (i : LHS.out-index) → RHS.conns→ (α-out-index i) ≡ α-in-index (LHS.conns→ i)
         conns→-resp (inj₁ i) = begin
-          _ ≡⟨ [,]-cong (λ _ → refl) (([,]-∘-distr (Sum.map _ _)) ∘ (splitAt (len A′)))
-               (splitAt (len A) (subF (⊕-assoc A A′ A′′) i)) ⟩
+          _ ≡⟨ [,]-cong (λ _ → refl) (([,]-∘-distr (Sum.map _ _)) ∘ (splitAt (len Y)))
+               (splitAt (len X) (subF (⊕-assoc X Y Z) i)) ⟩
           _ ≡˘⟨ lemma {f = (Sum.map _ _) ∘ f.conns→ ∘ inj₁} i ⟩
           _ ≡⟨ [,]-cong (λ x → begin
             _ ≡⟨ [,]-cong (λ y → begin
-              _ ≡⟨ map-cong (inject+-inject+ {B}) (λ _ → refl) (f.conns→ (inj₁ y)) ⟩
+              _ ≡⟨ map-cong (inject+-inject+ {X′}) (λ _ → refl) (f.conns→ (inj₁ y)) ⟩
               _ ≡˘⟨ map-commute (f.conns→ (inj₁ y)) ⟩
               _ ∎) (λ y → begin
               _ ≡⟨ map-commute (g.conns→ (inj₁ y)) ⟩
-              _ ≡⟨ map-cong (raise-inject+ {B}) (λ _ → refl) (g.conns→ (inj₁ y)) ⟩
+              _ ≡⟨ map-cong (raise-inject+ {X′}) (λ _ → refl) (g.conns→ (inj₁ y)) ⟩
               _ ≡˘⟨ map-commute (g.conns→ (inj₁ y)) ⟩
-              _ ∎) (splitAt (len A) x) ⟩
-            _ ≡˘⟨ [,]-∘-distr (Sum.map _ _) (splitAt (len A) x) ⟩
-            _ ≡˘⟨ map-commute ([ _ , _ ]′ (splitAt (len A) x)) ⟩
+              _ ∎) (splitAt (len X) x) ⟩
+            _ ≡˘⟨ [,]-∘-distr (Sum.map _ _) (splitAt (len X) x) ⟩
+            _ ≡˘⟨ map-commute ([ _ , _ ]′ (splitAt (len X) x)) ⟩
             _ ∎) (λ x → begin
             _ ≡⟨ map-commute (h.conns→ (inj₁ x)) ⟩
-            _ ≡⟨ map-cong (raise-raise {B}) (λ _ → refl) (h.conns→ (inj₁ x)) ⟩
+            _ ≡⟨ map-cong (raise-raise {X′}) (λ _ → refl) (h.conns→ (inj₁ x)) ⟩
             _ ≡˘⟨ map-commute (h.conns→ (inj₁ x)) ⟩
-            _ ∎) (splitAt (len A + len A′) i) ⟩
-          _ ≡˘⟨ [,]-∘-distr α-in-index (splitAt (len A + len A′) i) ⟩
+            _ ∎) (splitAt (len X + len Y) i) ⟩
+          _ ≡˘⟨ [,]-∘-distr α-in-index (splitAt (len X + len Y) i) ⟩
           _ ∎
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i)) with f.conns→ (inj₂ ((_ , _ , e) , i))
-        conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j) = cong inj₁ (inject+-inject+ {B} j)
+        conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₁ j) = cong inj₁ (inject+-inject+ {X′} j)
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₁ e)) , i))    | (inj₂ _) = refl
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i)) with g.conns→ (inj₂ ((_ , _ , e) , i))
-        conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i))    | (inj₁ j) = cong inj₁ (raise-inject+ {B} j)
+        conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i))    | (inj₁ j) = cong inj₁ (raise-inject+ {X′} j)
         conns→-resp (inj₂ ((_ , _ , inj₁ (inj₂ e)) , i))    | (inj₂ _) = refl
         conns→-resp (inj₂ ((_ , _ , inj₂ e) , i)) with h.conns→ (inj₂ ((_ , _ , e) , i))
-        conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) = cong inj₁ (raise-raise {B} j)
+        conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₁ j) = cong inj₁ (raise-raise {X′} j)
         conns→-resp (inj₂ ((_ , _ , inj₂ e) , i))    | (inj₂ _) = refl
+
+
+
+    open monoidal ⊗ unit
+                  refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
+                  id-unit⨂- (≋[][]→≋ -⨂id-unit) (≋[][]→≋ assoc)
+
+
+
+    triangle : ∀ {X Y} → cid {X} ⨂ unitorˡ.from {Y} ⊚ associator.from {X} {unit} {Y} ≋
+                          unitorʳ.from {X} ⨂ cid {Y}
+    triangle {X} {Y} = begin
+      _ ≈⟨ BF-hid ⊗ refl refl ⟩∘⟨refl ⟩
+      _ ≈⟨ hid-trans refl (⊕-assoc X unit Y) ⟩
+      _ ≈⟨ hid-cong (triangle-identity X Y) ⟩
+      _ ≈˘⟨ hid-cong (cong₂-reflʳ′ (⊕-identityʳ X)) ⟩
+      _ ≈˘⟨ BF-hid ⊗ (⊕-identityʳ X) refl ⟩
+      _ ∎
+      where open HomReasoning hiding (refl; sym; trans)
+
+
+
+    pentagon : ∀ {X Y Z W} → cid {X} ⨂ associator.from {Y} {Z} {W} ⊚
+                              associator.from {X} {Y ⊕ Z} {W} ⊚
+                              associator.from {X} {Y} {Z} ⨂ cid {W} ≋
+                              associator.from {X} {Y} {Z ⊕ W} ⊚
+                              associator.from {X ⊕ Y} {Z} {W}
+    pentagon {X} {Y} {Z} {W} = begin
+      _ ≈⟨ BF-hid ⊗ refl (⊕-assoc Y Z W) ⟩∘⟨ refl⟩∘⟨ BF-hid ⊗ (⊕-assoc X Y Z) refl ⟩
+      _ ≈⟨ hid-cong (cong₂-reflˡ′ (⊕-assoc Y Z W)) ⟩∘⟨ refl⟩∘⟨ hid-cong (cong₂-reflʳ′ (⊕-assoc X Y Z)) ⟩
+      _ ≈⟨ refl⟩∘⟨ hid-trans (⊕-assoc X _ W) (cong (_⊕ W) (⊕-assoc X Y Z)) ⟩
+      _ ≈⟨ hid-trans (cong (X ⊕_) (⊕-assoc Y Z W)) (trans (cong (_⊕ W) (⊕-assoc X Y Z)) (⊕-assoc X _ W)) ⟩
+      _ ≈⟨ hid-cong (pentagon-identity X Y Z W) ⟩
+      _ ≈˘⟨ hid-trans (⊕-assoc X Y _) (⊕-assoc _ Z W) ⟩
+      _ ∎
+      where open HomReasoning hiding (refl; sym; trans)
+
 
 
 module Diagram-Monoidal = Monoidal Diagram-Monoidal

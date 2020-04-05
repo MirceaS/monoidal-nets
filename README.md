@@ -1,7 +1,7 @@
 # monoidal-nets
 This is an Agda library developed for the formalisation of String Diagrams along with proofs that they, with the usual operations, form a Symmetric Monoidal Category.
 
-**This library uses the K axiom and the --safe flag.**
+**This library uses the --without-K and the --safe flag.**
 
 ## Installation:
 

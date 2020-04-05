@@ -1,7 +1,6 @@
-{-# OPTIONS --safe #-}
+{-# OPTIONS --without-K --safe #-}
 
 import Nets.Utils
-import Nets.K-Utils
 import Nets.Hypergraph
 import Nets.Diagram
 import Nets.Category
