@@ -8,4 +8,5 @@ import Nets.Graphical
 import Nets.MonoidalHelper
 import Nets.Monoidal
 import Nets.Symmetric
+import Nets.Closure
 import Nets.Example
