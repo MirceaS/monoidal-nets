@@ -19,13 +19,7 @@ data ELabel : List ⊤ → List ⊤ → Set where
   A B : ELabel 2* 1*
   C   : ELabel 1* 1*
 
-HG : Hypergraph _ _ _
-HG = record
-  { V = ⊤
-  ; E = ELabel
-  ; _≈_ = _≡_
-  ; equiv = isEquivalence
-  }
+HG = basic ELabel
 
 open import Nets.Diagram HG
 open Core {zero} using (Diagram)

@@ -9,4 +9,6 @@ import Nets.MonoidalHelper
 import Nets.Monoidal
 import Nets.Symmetric
 import Nets.Closure
+import Nets.DiagrammaticReasoning
 import Nets.Example
+import Nets.ReasoningExample

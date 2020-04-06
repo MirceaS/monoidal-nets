@@ -6,8 +6,10 @@
 
 open import Level
 open import Relation.Binary hiding (_⇒_)
+open import Relation.Binary.PropositionalEquality using (_≡_; isEquivalence)
+open import Data.Unit hiding (setoid)
 
-open import Categories.Category.Construction.Graphs hiding (setoid)
+open import Categories.Category.Construction.Graphs hiding (setoid; isEquivalence)
 
 open import Nets.Utils
 
@@ -70,3 +72,11 @@ toHypergraph g = record
 
     trans-inj : ∀ {x y} → (Transitive (_≈-inj_ {x} {y}))
     trans-inj {_} {_} {^ _} {^ _} {^ _} = Equiv.trans
+
+basic : (ELabel : List ⊤ → List ⊤ → Set) → Hypergraph _ _ _
+basic ELabel = record
+  { V = ⊤
+  ; E = ELabel
+  ; _≈_ = _≡_
+  ; equiv = isEquivalence
+  }
