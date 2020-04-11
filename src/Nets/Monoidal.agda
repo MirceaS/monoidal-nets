@@ -429,7 +429,7 @@ Diagram-Monoidal = record
       _ ≈⟨ BF-hid ⊗ refl refl ⟩∘⟨refl ⟩
       _ ≈⟨ hid-trans refl (⊕-assoc X unit Y) ⟩
       _ ≈⟨ hid-cong (triangle-identity X Y) ⟩
-      _ ≈˘⟨ hid-cong (cong₂-reflʳ′ (⊕-identityʳ X)) ⟩
+      _ ≈˘⟨ hid-cong (cong₂-reflʳ (⊕-identityʳ X)) ⟩
       _ ≈˘⟨ BF-hid ⊗ (⊕-identityʳ X) refl ⟩
       _ ∎
       where open HomReasoning hiding (refl; sym; trans)
@@ -443,7 +443,7 @@ Diagram-Monoidal = record
                               associator.from {X ⊕ Y} {Z} {W}
     pentagon {X} {Y} {Z} {W} = begin
       _ ≈⟨ BF-hid ⊗ refl (⊕-assoc Y Z W) ⟩∘⟨ refl⟩∘⟨ BF-hid ⊗ (⊕-assoc X Y Z) refl ⟩
-      _ ≈⟨ hid-cong (cong₂-reflˡ′ (⊕-assoc Y Z W)) ⟩∘⟨ refl⟩∘⟨ hid-cong (cong₂-reflʳ′ (⊕-assoc X Y Z)) ⟩
+      _ ≈⟨ hid-cong (cong₂-reflˡ (⊕-assoc Y Z W)) ⟩∘⟨ refl⟩∘⟨ hid-cong (cong₂-reflʳ (⊕-assoc X Y Z)) ⟩
       _ ≈⟨ refl⟩∘⟨ hid-trans (⊕-assoc X _ W) (cong (_⊕ W) (⊕-assoc X Y Z)) ⟩
       _ ≈⟨ hid-trans (cong (X ⊕_) (⊕-assoc Y Z W)) (trans (cong (_⊕ W) (⊕-assoc X Y Z)) (⊕-assoc X _ W)) ⟩
       _ ≈⟨ hid-cong (pentagon-identity X Y Z W) ⟩
