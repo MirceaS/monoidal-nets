@@ -26,4 +26,4 @@ If any error comes up please submit an Issue on the project page.
 *Note: For some users, the default Agda folder may be located somewhere else (not in `~/.agda`). If that happens to be the case, please change the commands above accordingly.*
 
 
-The library has been checked successfully using Agda version 2.6.1 and against agda-stdlib (as of commit 7efaa6f) and agda-categories (as of commit f44e536).
+The library has been checked successfully using Agda version 2.6.1 and against agda-stdlib (as of commit 7efaa6f) and agda-categories (as of commit 1d74aec).

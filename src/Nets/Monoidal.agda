@@ -15,7 +15,7 @@ open import Function using (_∘_ ; id; Inverseᵇ)
 open import Categories.Functor.Bifunctor using (Bifunctor)
 open import Categories.Category
 open import Categories.Category.Product
-open import Categories.Category.Monoidal using (Monoidal)
+open import Categories.Category.Monoidal
 open import Categories.Morphism.HeterogeneousIdentity.Properties using (BF-hid)
 
 open import Nets.Utils
@@ -26,7 +26,6 @@ module Nets.Monoidal {ℓ₁ ℓ₂ ℓ₃} (HG : Hypergraph ℓ₁ ℓ₂ ℓ�
 open import Nets.Diagram HG
 open Core {l}
 open import Nets.Category HG {l} renaming (Diagram-Category to DC)
-open import Nets.MonoidalHelper HG {l}
 
 open import Categories.Morphism DC using (_≅_; module _≅_)
 open import Categories.Morphism.HeterogeneousIdentity DC
@@ -36,18 +35,15 @@ private
   open E renaming (V to VLabel; E to ELabel) using ()
 
 Diagram-Monoidal : Monoidal DC
-Diagram-Monoidal = record
+Diagram-Monoidal = monoidalHelper DC record
   { ⊗ = ⊗
   ; unit = unit
   ; unitorˡ = unitorˡ
   ; unitorʳ = unitorʳ
-  ; associator = λ {X} {Y} {Z} → associator {X = X} {Y = Y} {Z = Z}
-  ; unitorˡ-commute-from = unitorˡ-commute-from
-  ; unitorˡ-commute-to = unitorˡ-commute-to
-  ; unitorʳ-commute-from = unitorʳ-commute-from
-  ; unitorʳ-commute-to = unitorʳ-commute-to
-  ; assoc-commute-from = assoc-commute-from
-  ; assoc-commute-to = assoc-commute-to
+  ; associator = λ {X} {Y} {Z} → associator {X} {Y} {Z}
+  ; unitorˡ-commute = hid-square id-unit⨂-
+  ; unitorʳ-commute = hid-square (≋[][]→≋ -⨂id-unit)
+  ; assoc-commute = hid-square (≋[][]→≋ assoc)
   ; triangle = triangle
   ; pentagon = pentagon
   }
@@ -417,9 +413,18 @@ Diagram-Monoidal = record
 
 
 
-    open monoidal ⊗ unit
-                  refl (λ {x} → ⊕-identityʳ x) (λ {x y z} → ⊕-assoc x y z)
-                  id-unit⨂- (≋[][]→≋ -⨂id-unit) (≋[][]→≋ assoc)
+    unitorˡ : ∀ {X} → unit ⊕ X ≅ X
+    unitorˡ = hid-≅ refl
+
+    unitorʳ : ∀ {X} → X ⊕ unit ≅ X
+    unitorʳ {X} = hid-≅ (⊕-identityʳ X)
+
+    associator : ∀ {X} {Y} {Z} → (X ⊕ Y) ⊕ Z ≅ X ⊕ (Y ⊕ Z)
+    associator {X} {Y} {Z} = hid-≅ (⊕-assoc X Y Z)
+
+    module unitorˡ {X} = _≅_ (unitorˡ {X = X})
+    module unitorʳ {X} = _≅_ (unitorʳ {X = X})
+    module associator {X} {Y} {Z} = _≅_ (associator {X = X} {Y = Y} {Z = Z})
 
 
 
